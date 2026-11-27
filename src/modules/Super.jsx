@@ -1,0 +1,30 @@
+import {useState} from 'react'
+import {useS,PLANS} from '../store'
+import {Sheet,Field,Btn,Badge,Kpis,Seg,f,tzs} from '../ui'
+const rev=z=>z.branches.reduce((a,b)=>a+b.data.sales.reduce((q,s)=>q+s.kg*s.price,0),0)
+export default function Super(){
+const {db,x,t:tr}=useS();const [t,setT]=useState('overview');const [o,setO]=useState(null);const [pin,setPin]=useState('');const [q,setQ]=useState('')
+const NAVS=[['overview','📊',tr('Muhtasari','Overview')],['tenants','🏢',tr('Kampuni','Tenants')],['plans','💳',tr('Vifurushi','Plans')],['activity','🛡️',tr('Matukio','Activity')]]
+const pr=id=>PLANS.find(p=>p.id===id)?.price||0,act=db.tenants.filter(z=>z.status!=='suspended'),mrr=act.reduce((a,z)=>a+pr(z.plan),0)
+const tn=o&&db.tenants.find(z=>z.id===o),col={active:'green',trial:'blue',suspended:'red'}
+const mon={};db.tenants.forEach(z=>{const k=z.created.slice(0,7);mon[k]=(mon[k]||0)+1});const mm=Math.max(1,...Object.values(mon))
+const list=db.tenants.filter(z=>z.name.toLowerCase().includes(q.toLowerCase()))
+return <div className="app"><aside className="side"><div className="logo"><span>🛰️</span>{tr('Mfumo','Platform')}</div>{NAVS.map(n=><button key={n[0]} className={t===n[0]?'on':''} onClick={()=>setT(n[0])}><span>{n[1]}</span>{n[2]}</button>)}<div className="sp"/><button onClick={x.logout}><span>⏻</span>{tr('Toka','Logout')}</button></aside>
+<div className="col"><header><div><small>🐟 {tr('Mfumo wa FishTrade','FishTrade platform')}</small><h1>{NAVS.find(n=>n[0]===t)[2]}</h1></div><div className="me"><span><b>{tr('Msimamizi Mkuu','Super Admin')}</b><small>{tr('Udhibiti kamili','Full control')}</small></span><button className="back lo" onClick={x.logout}>{tr('Toka','Logout')}</button></div></header>
+<main><div className="pg">
+{t==='overview'&&<><Kpis a={[[tr('Kampuni','Companies'),db.tenants.length+' ('+act.length+tr(' hai)',' live)'),'🏢'],[tr('Mapato ya Mwezi (MRR)','Monthly revenue (MRR)'),tzs(mrr),'💳'],[tr('Matawi','Branches'),db.tenants.reduce((a,z)=>a+z.branches.length,0),'🏬'],[tr('Watumiaji','Users'),db.tenants.reduce((a,z)=>a+z.staff.length,0),'👥'],[tr('Mauzo ya Mfumo','Platform sales volume'),tzs(db.tenants.reduce((a,z)=>a+rev(z),0)),'💰'],[tr('Zilizosimamishwa','Suspended'),db.tenants.filter(z=>z.status==='suspended').length,'⛔']]}/>
+<div className="card"><h4>{tr('Kampuni mpya kwa mwezi','New companies by month')}</h4>{Object.entries(mon).sort().map(([k,v])=><div className="barx" key={k}><div className="bl"><span>{k}</span><b>{v}</b></div><div className="tr"><i style={{width:v/mm*100+'%'}}/></div></div>)}</div>
+<div className="card"><h4>{tr('Kampuni zinazoongoza kwa mauzo','Top companies by sales')}</h4>{[...db.tenants].sort((a,b)=>rev(b)-rev(a)).map(z=><div className="row" key={z.id}><span>{z.name}</span><b>{tzs(rev(z))}</b></div>)}</div>
+<div className="card"><h4>{tr('Mgawanyo wa Vifurushi','Plan mix')}</h4>{PLANS.map(p=><div className="row" key={p.id}><span>{p.id}</span><b>{db.tenants.filter(z=>z.plan===p.id).length} {tr('kampuni','companies')}</b></div>)}</div></>}
+{t==='tenants'&&<><div className="card wide"><Field label={tr('Tafuta kampuni','Search company')}><input value={q} onChange={e=>setQ(e.target.value)} placeholder={tr('Andika jina la kampuni','Type a company name')}/></Field></div>
+{list.map(z=><div className="card" key={z.id}><div className="row"><b>🏢 {z.name}</b><Badge c={col[z.status]}>{z.status}</Badge></div><div className="row mut"><span>{z.plan} · {z.branches.length} {tr('matawi','branches')} · {z.staff.length} {tr('watumiaji','users')}</span><span>{tr('tangu ','since ')}{z.created}</span></div>
+<div className="row"><span>{tr('Mauzo ','Sales ')}{tzs(rev(z))}</span><Btn c="sm" onClick={()=>setO(z.id)}>{tr('Simamia','Manage')}</Btn></div></div>)}</>}
+{t==='plans'&&PLANS.map(p=><div className="card" key={p.id}><div className="row"><b>{p.id}</b><b>{tzs(p.price)}/{tr('mwezi','month')}</b></div><div className="mut">{p.note}</div><div className="row"><span>{tr('Hadi matawi ','Up to ')}{p.branches>50?tr('yasiyo na kikomo','unlimited'):p.branches} · {p.users>500?tr('watumiaji wasio na kikomo','unlimited'):p.users} {tr('watumiaji','users')}</span><Badge c="blue">{db.tenants.filter(z=>z.plan===p.id).length} {tr('kampuni','companies')}</Badge></div></div>)}
+{t==='activity'&&(db.plat.log.length?db.plat.log.map(l=><div className="card" key={l.id}><b>{l.m}</b><div className="mut">{l.t}</div></div>):<p className="mut">{tr('Hakuna matukio bado.','No platform activity yet.')}</p>)}
+</div></main>
+<nav className="bnav">{NAVS.map(n=><button key={n[0]} className={t===n[0]?'on':''} onClick={()=>setT(n[0])}><span>{n[1]}</span>{n[2]}</button>)}</nav></div>
+{tn&&<Sheet title={tn.name} onClose={()=>setO(null)}><p className="mut">{tn.sector} · {tn.region} · {tr('mmiliki','owner')} @{(tn.staff.find(y=>y.role==='Owner')||tn.staff[0]).username}</p>
+<Field label={tr('Kifurushi','Plan')}><select value={tn.plan} onChange={e=>x.setTenant(tn.id,{plan:e.target.value},'Plan of '+tn.name+' set to '+e.target.value)}>{PLANS.map(p=><option key={p.id}>{p.id}</option>)}</select></Field>
+<h4>{tr('Matawi','Branches')}</h4>{tn.branches.map(b=><div className="row" key={b.id}><span>{b.name}</span><b>{tzs(b.data.sales.reduce((a,s)=>a+s.kg*s.price,0))}</b></div>)}
+<div className="two" style={{marginTop:12}}>{tn.status==='suspended'?<Btn c="pri" onClick={()=>x.setTenant(tn.id,{status:'active'},'Activated '+tn.name)}>{tr('Washa','Activate')}</Btn>:<Btn c="pri" style={{background:'#d1432f'}} onClick={()=>x.setTenant(tn.id,{status:'suspended'},'Suspended '+tn.name)}>{tr('Simamisha','Suspend')}</Btn>}<Btn c="pri" onClick={()=>{x.impersonate(tn.id);setO(null)}}>{tr('Fungua kama Mmiliki','Open as owner')}</Btn></div>
+<Field label={tr('Weka upya PIN ya Mmiliki','Reset owner PIN')}><input type="password" inputMode="numeric" value={pin} onChange={e=>setPin(e.target.value)} placeholder={tr('PIN mpya (namba 4-6)','New 4-6 digit PIN')}/></Field><Btn c="ghost" disabled={!/^\d{4,6}$/.test(pin)} onClick={()=>{x.resetPin(tn.id,pin);setPin('')}}>{tr('Weka upya PIN','Reset PIN')}</Btn></Sheet>}</div>}
