@@ -1,7 +1,6 @@
-import React from 'react'
+import React, { useState } from 'react'
 import {
   Fish,
-  Anchor,
   Scale,
   Warehouse,
   ShieldCheck,
@@ -10,14 +9,14 @@ import {
   QrCode,
   CheckCircle2,
   ArrowRight,
-  TrendingUp,
-  Smartphone,
   ChevronDown,
-  Sparkles,
-  Award
+  Award,
+  WifiOff,
+  Smartphone
 } from 'lucide-react'
 import { PLANS, useS } from '../store'
-import { FishPhoto, tzs } from '../ui'
+import { useDevice } from '../device'
+import { FishPhoto, tzs, PWAInstallButton } from '../ui'
 import { LangToggle } from '../i18n'
 
 const getFeatures = t => [
@@ -76,13 +75,147 @@ const scrollTo = id => document.getElementById(id)?.scrollIntoView({ behavior: '
 
 export default function Landing({ go: nav }) {
   const { lang, setLang, t } = useS()
+  const device = useDevice()
+  const [slideIdx, setSlideIdx] = useState(0)
+
+  const slides = [
+    {
+      img: '/landing/hero.jpg',
+      caption: t('Ukusanyaji wa Samaki Mwaloni', 'Landing Site Procurement & Weighing')
+    },
+    {
+      img: '/photos/cold-storage.png',
+      caption: t('Stoo ya Vyumba Baridi (0°C – -18°C)', 'Cold Room Storage & FIFO Batches')
+    },
+    {
+      img: '/photos/refrigerated-truck.png',
+      caption: t('Usafirishaji wa Baridi Kiwandani', 'Cold Chain Industry Dispatch')
+    }
+  ]
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 font-sans selection:bg-blue-600 selection:text-white">
-      {/* Top Bar Navigation */}
-      <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-slate-200">
+      {/* ═══════════════════════════════════════════════════════════════════════ */}
+      {/* MOBILE WELCOME / SPLASH VIEW (< 768px) — Matches Reference Screen 1     */}
+      {/* ═══════════════════════════════════════════════════════════════════════ */}
+      <section className="md:hidden min-h-[100dvh] bg-gradient-to-b from-[#042242] via-[#06325f] to-[#083b6b] text-white flex flex-col justify-between relative overflow-hidden">
+        {/* Top bar: Language & Device Readiness */}
+        <div
+          className="px-5 pt-4 flex items-center justify-between relative z-10"
+          style={{ paddingTop: 'calc(14px + env(safe-area-inset-top))' }}
+        >
+          <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-sky-200 bg-white/10 px-2.5 py-1 rounded-full border border-white/15">
+            <Smartphone size={12} />
+            {device.isIOS ? 'iPhone Ready' : device.isAndroid ? 'Android Ready' : 'Mobile PWA'}
+          </span>
+          <LangToggle lang={lang} setLang={setLang} />
+        </div>
+
+        {/* Center Brand + Copy + Arched Photo */}
+        <div className="px-6 pt-4 pb-2 flex flex-col items-center text-center relative z-10 flex-1 justify-center">
+          <div className="w-20 h-20 rounded-2xl bg-white p-2 shadow-xl flex items-center justify-center mb-3">
+            <img
+              src="/assets/aistudio/AquaCatch_Sharkwave_Logo_df0743e7.png"
+              alt="AquaCatch FishTrade ERP"
+              className="w-full h-full object-contain"
+            />
+          </div>
+          <h1 className="text-3xl font-extrabold tracking-tight text-white m-0 leading-tight">
+            AquaCatch
+          </h1>
+          <span className="text-sm font-bold text-sky-200 tracking-wide mt-0.5">
+            FishTrade ERP
+          </span>
+          <p className="text-xs text-slate-200/95 max-w-[280px] leading-relaxed mt-3 mb-5">
+            {t(
+              'Manunuzi ya Samaki, Stoo Baridi, Usambazaji & Usimamizi wa Fedha (Online & Offline)',
+              'Fish Procurement, Inventory, Distribution & Financial Management'
+            )}
+          </p>
+
+          {/* Rounded Hero Image Card */}
+          <div className="w-full max-w-[320px] h-48 rounded-t-[28px] rounded-b-2xl overflow-hidden border border-white/20 shadow-2xl relative bg-slate-900">
+            <img
+              src={slides[slideIdx].img}
+              alt={slides[slideIdx].caption}
+              className="w-full h-full object-cover"
+            />
+            <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-[#042242]/90 via-[#042242]/40 to-transparent px-3 py-2.5 text-left">
+              <span className="text-[11px] font-semibold text-white">{slides[slideIdx].caption}</span>
+            </div>
+          </div>
+
+          {/* Slide Dots */}
+          <div className="flex items-center gap-2 mt-4">
+            {slides.map((sl, i) => (
+              <button
+                key={sl.img}
+                type="button"
+                aria-label={`Slide ${i + 1}`}
+                onClick={() => setSlideIdx(i)}
+                className={`h-2 rounded-full transition-all ${
+                  slideIdx === i ? 'w-5 bg-[#18b8b2]' : 'w-2 bg-white/35'
+                }`}
+              />
+            ))}
+          </div>
+        </div>
+
+        {/* Bottom Curved Ocean Wave & Primary CTAs */}
+        <div className="relative z-10 px-6 pb-7 pt-4" style={{ paddingBottom: 'calc(24px + env(safe-area-inset-bottom))' }}>
+          <svg
+            viewBox="0 0 400 70"
+            preserveAspectRatio="none"
+            className="pointer-events-none absolute -top-10 inset-x-0 w-full h-14 opacity-40"
+          >
+            <path d="M0,40 C95,5 210,65 320,25 C360,10 385,20 400,32 L400,70 L0,70 Z" fill="#18b8b2" />
+          </svg>
+
+          <div className="flex flex-col gap-2.5 max-w-[340px] mx-auto">
+            <button
+              type="button"
+              onClick={() => nav('register')}
+              className="w-full min-h-[50px] rounded-full bg-[#18b8b2] hover:bg-[#149f9a] text-[#042242] font-extrabold text-[15px] flex items-center justify-center gap-2 shadow-lg transition"
+            >
+              <span>{t('Anza Sasa', 'Get Started')}</span>
+              <ArrowRight size={18} />
+            </button>
+
+            <div className="grid grid-cols-2 gap-2.5">
+              <button
+                type="button"
+                onClick={() => nav('login')}
+                className="min-h-[44px] rounded-full bg-white/12 hover:bg-white/20 border border-white/25 text-white font-bold text-xs flex items-center justify-center transition"
+              >
+                {t('Ingia Akaunti', 'Sign In')}
+              </button>
+              <button
+                type="button"
+                onClick={() => scrollTo('features')}
+                className="min-h-[44px] rounded-full bg-transparent hover:bg-white/10 border border-white/15 text-sky-100 font-semibold text-xs flex items-center justify-center gap-1 transition"
+              >
+                <span>{t('Vipengele', 'Explore')}</span>
+                <ChevronDown size={14} />
+              </button>
+            </div>
+
+            <div className="flex items-center justify-center gap-4 pt-1 text-[11px] text-sky-200/90">
+              <span className="flex items-center gap-1">
+                <WifiOff size={12} className="text-[#18b8b2]" /> {t('Inafanya Kazi Offline', 'Works Offline')}
+              </span>
+              <span className="flex items-center gap-1">
+                <CheckCircle2 size={12} className="text-[#18b8b2]" /> FiRCIS & GS1
+              </span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ═══════════════════════════════════════════════════════════════════════ */}
+      {/* DESKTOP TOP BAR & HERO (>= 768px)                                       */}
+      {/* ═══════════════════════════════════════════════════════════════════════ */}
+      <header className="hidden md:block sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-slate-200">
         <div className="max-w-7xl mx-auto px-6 py-3.5 flex items-center justify-between gap-6">
-          {/* Zone 1: Brand Logo & Wordmark */}
           <div className="flex items-center gap-3 whitespace-nowrap shrink-0">
             <div className="w-11 h-11 rounded-xl bg-white border border-slate-200 p-1 flex items-center justify-center shadow-sm overflow-hidden">
               <img
@@ -101,8 +234,7 @@ export default function Landing({ go: nav }) {
             </div>
           </div>
 
-          {/* Zone 2: Clean single-line text navigation links */}
-          <nav className="hidden md:flex items-center gap-7 text-sm font-semibold text-slate-600">
+          <nav className="flex items-center gap-7 text-sm font-semibold text-slate-600">
             <button onClick={() => scrollTo('features')} className="hover:text-blue-800 transition whitespace-nowrap">
               {t('Vipengele', 'Features')}
             </button>
@@ -120,8 +252,8 @@ export default function Landing({ go: nav }) {
             </button>
           </nav>
 
-          {/* Zone 3: Language Toggle + Primary Action buttons */}
           <div className="flex items-center gap-2.5 shrink-0">
+            <PWAInstallButton />
             <LangToggle lang={lang} setLang={setLang} />
             <button
               onClick={() => nav('login')}
@@ -139,8 +271,7 @@ export default function Landing({ go: nav }) {
         </div>
       </header>
 
-      {/* Hero Section with Crystal-Clear Lake Victoria Photography & Animated Nile Perch */}
-      <section className="relative bg-sky-950 text-white overflow-hidden py-14 md:py-20 border-b border-slate-800">
+      <section className="hidden md:block relative bg-sky-950 text-white overflow-hidden py-16 lg:py-20 border-b border-slate-800">
         <img
           src="/landing/hero.jpg"
           alt={t('Wavuvi wa Tanzania wakifika mwalo wa Ziwa Victoria', 'Tanzanian fishermen arriving at Lake Victoria landing site')}
@@ -188,17 +319,15 @@ export default function Landing({ go: nav }) {
             <div className="flex flex-wrap items-center gap-6 pt-3 text-xs text-white/90 font-medium drop-shadow">
               <span className="flex items-center gap-1.5"><CheckCircle2 size={15} className="text-emerald-400" /> {t('Siku 14 Bure', '14-Day Free Trial')}</span>
               <span className="flex items-center gap-1.5"><CheckCircle2 size={15} className="text-emerald-400" /> {t('Inakidhi FiRCIS', 'FiRCIS Compliant')}</span>
-              <span className="flex items-center gap-1.5"><CheckCircle2 size={15} className="text-emerald-400" /> {t('Matawi Mengi', 'Multi-Branch Ready')}</span>
+              <span className="flex items-center gap-1.5"><CheckCircle2 size={15} className="text-emerald-400" /> {t('Inafanya Kazi Bila Intaneti', 'Offline PWA Ready')}</span>
             </div>
           </div>
 
-          {/* Animated Real Nile Perch + Live Catch Showcase */}
           <div className="lg:col-span-5 flex flex-col gap-4">
-            {/* Live Swimming Nile Perch Card */}
             <div className="relative rounded-2xl overflow-hidden border border-sky-300/35 bg-gradient-to-br from-sky-900/75 via-blue-950/75 to-slate-950/80 backdrop-blur-md p-4 shadow-2xl">
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+                  <Fish size={14} className="text-emerald-400" />
                   <span className="text-[11px] font-mono uppercase tracking-wider text-sky-200 font-semibold">
                     {t('Sangara · Ziwa Victoria', 'Lates niloticus · Lake Victoria')}
                   </span>
@@ -225,7 +354,6 @@ export default function Landing({ go: nav }) {
               </div>
             </div>
 
-            {/* Commercial Catch Metrics Card */}
             <div className="bg-slate-900/80 backdrop-blur-md border border-white/15 rounded-2xl p-4 shadow-2xl flex flex-col gap-3">
               <div className="flex justify-between items-center border-b border-white/10 pb-2.5">
                 <span className="text-xs font-mono uppercase tracking-wider text-slate-300">{t('Mnyororo wa Ziwa Victoria', 'Lake Victoria Value Chain')}</span>
@@ -264,9 +392,9 @@ export default function Landing({ go: nav }) {
         </div>
       </section>
 
-      {/* Problem & Solution Transformation (SRS Section 1) */}
-      <section className="py-16 md:py-20 max-w-7xl mx-auto px-6">
-        <div className="text-center max-w-3xl mx-auto mb-14">
+      {/* Shared Features, Traceability, Fleet, Pricing & FAQ Sections */}
+      <section className="py-12 md:py-20 max-w-7xl mx-auto px-5 sm:px-6">
+        <div className="text-center max-w-3xl mx-auto mb-10 md:mb-14">
           <span className="text-xs font-bold uppercase tracking-wider text-blue-700 block mb-2">
             {t('Fursa ya Kibiashara', 'The Commercial Opportunity')}
           </span>
@@ -278,10 +406,10 @@ export default function Landing({ go: nav }) {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          <div className="p-8 rounded-2xl bg-rose-50/50 border border-rose-200 flex flex-col gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
+          <div className="p-6 md:p-8 rounded-2xl bg-rose-50/50 border border-rose-200 flex flex-col gap-4">
             <span className="text-xs font-bold uppercase tracking-wider text-rose-700">{t('Zamani · Madaftari ya Karatasi', 'Before · Traditional Paper Management')}</span>
-            <h3 className="text-xl font-bold text-slate-900 m-0">{t('Hesabu Zisizo Sahihi & Hasara', 'Inaccurate Books & Untraceable Losses')}</h3>
+            <h3 className="text-lg md:text-xl font-bold text-slate-900 m-0">{t('Hesabu Zisizo Sahihi & Hasara', 'Inaccurate Books & Untraceable Losses')}</h3>
             <ul className="flex flex-col gap-3 text-sm text-slate-700 m-0 p-0 list-none">
               <li className="flex items-start gap-2.5">
                 <span className="text-rose-600 font-bold">✕</span> {t('Uzito wa wavuvi kuandikwa kwenye karatasi zinazolowa maji au kupotea.', 'Fishermen weights recorded on damp paper that gets lost or altered.')}
@@ -298,9 +426,9 @@ export default function Landing({ go: nav }) {
             </ul>
           </div>
 
-          <div className="p-8 rounded-2xl bg-emerald-50/50 border border-emerald-200 flex flex-col gap-4 shadow-sm">
+          <div className="p-6 md:p-8 rounded-2xl bg-emerald-50/50 border border-emerald-200 flex flex-col gap-4 shadow-sm">
             <span className="text-xs font-bold uppercase tracking-wider text-emerald-700">{t('Sasa · Mfumo wa FishTrade ERP', 'After · FishTrade ERP Cloud & PWA')}</span>
-            <h3 className="text-xl font-bold text-slate-900 m-0">{t('Udhibiti Kamili wa Kidijitali', 'Centralized Digital Intelligence')}</h3>
+            <h3 className="text-lg md:text-xl font-bold text-slate-900 m-0">{t('Udhibiti Kamili wa Kidijitali', 'Centralized Digital Intelligence')}</h3>
             <ul className="flex flex-col gap-3 text-sm text-slate-700 m-0 p-0 list-none">
               <li className="flex items-start gap-2.5">
                 <span className="text-emerald-600 font-bold">✓</span> {t('Upimaji wa haraka chini ya sekunde 60 na risiti ya papo hapo.', 'Fast digital scale capture in < 60 seconds with instant WhatsApp receipts.')}
@@ -319,26 +447,22 @@ export default function Landing({ go: nav }) {
         </div>
       </section>
 
-      {/* Feature Capabilities Grid */}
-      <section id="features" className="py-16 md:py-20 bg-slate-100/70 border-y border-slate-200">
-        <div className="max-w-7xl mx-auto px-6">
-          <div className="text-center max-w-3xl mx-auto mb-14">
+      <section id="features" className="py-12 md:py-20 bg-slate-100/70 border-y border-slate-200">
+        <div className="max-w-7xl mx-auto px-5 sm:px-6">
+          <div className="text-center max-w-3xl mx-auto mb-10 md:mb-14">
             <span className="text-xs font-bold uppercase tracking-wider text-blue-700 block mb-2">
               {t('Mfumo Kamili', 'Comprehensive Platform')}
             </span>
             <h2 className="text-2xl md:text-3xl font-bold text-slate-900">
               {t('Umejengwa kwa kila mfanyakazi katika biashara ya samaki', 'Built for every role in the fish trading business')}
             </h2>
-            <p className="text-slate-600 text-sm mt-3">
-              {t('Mfumo mmoja unaounganisha maafisa wa mialoni, wakaguzi wa ubora, watunza stoo, wahasibu, na wamiliki wa kampuni.', 'One integrated platform with tailored workflows for landing officers, quality inspectors, storekeepers, accountants, and company owners.')}
-            </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
             {getFeatures(t).map(feat => {
               const Icon = feat.icon
               return (
-                <div key={feat.title} className="p-6 bg-white rounded-2xl border border-slate-200 shadow-sm flex flex-col gap-3">
+                <div key={feat.title} className="p-5 sm:p-6 bg-white rounded-2xl border border-slate-200 shadow-sm flex flex-col gap-3">
                   <div className="w-11 h-11 rounded-xl bg-blue-50 text-blue-700 flex items-center justify-center">
                     <Icon size={22} />
                   </div>
@@ -351,9 +475,8 @@ export default function Landing({ go: nav }) {
         </div>
       </section>
 
-      {/* Complete Traceability Section (SRS Section 3 with Real Diagram) */}
-      <section id="traceability" className="py-16 md:py-20 max-w-7xl mx-auto px-6">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+      <section id="traceability" className="py-12 md:py-20 max-w-7xl mx-auto px-5 sm:px-6">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
           <div className="lg:col-span-6 flex flex-col gap-4">
             <span className="text-xs font-bold uppercase tracking-wider text-blue-700">
               {t('Ubora wa Kipekee', 'Core Value Differentiator')}
@@ -382,37 +505,33 @@ export default function Landing({ go: nav }) {
                 className="w-full h-auto object-cover"
               />
               <div className="p-4 bg-slate-900 text-white flex justify-between items-center text-xs">
-                <span>{t('1. Uvuvi → 2. Uchakataji → 3. Chumba cha Baridi → 4. Kiwandani', '1. Fishing Source → 2. Processing → 3. Cold Chain → 4. Delivery')}</span>
-                <span className="font-mono text-emerald-400 font-bold">{t('Inafuatilika 100%', '100% Traceable')}</span>
+                <span>{t('1. Uvuvi → 2. Uchakataji → 3. Baridi → 4. Kiwandani', '1. Fishing → 2. Processing → 3. Cold Chain → 4. Delivery')}</span>
+                <span className="font-mono text-emerald-400 font-bold shrink-0">{t('Inafuatilika 100%', '100% Traceable')}</span>
               </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Cold Chain Fleet Section with Real Truck Images */}
-      <section id="fleet" className="py-16 md:py-20 bg-slate-100/70 border-y border-slate-200">
-        <div className="max-w-7xl mx-auto px-6">
-          <div className="text-center max-w-3xl mx-auto mb-14">
+      <section id="fleet" className="py-12 md:py-20 bg-slate-100/70 border-y border-slate-200">
+        <div className="max-w-7xl mx-auto px-5 sm:px-6">
+          <div className="text-center max-w-3xl mx-auto mb-10 md:mb-14">
             <span className="text-xs font-bold uppercase tracking-wider text-blue-700 block mb-2">
               {t('Usafirishaji wa Baridi', 'Cold Chain Logistics')}
             </span>
             <h2 className="text-2xl md:text-3xl font-bold text-slate-900">
               {t('Magari ya Baridi & Usafiri wa Mialoni', 'Refrigerated Fleet & Landing Pier Transport')}
             </h2>
-            <p className="text-slate-600 text-sm mt-3">
-              {t('Tunza ubora wa samaki kati ya mialo ya ziwa na viwanda kwa magari ya baridi ya tani 1 hadi 3.', 'Maintain fish quality between lake docks and industrial processing zones with 1 to 3 ton KYC light refrigerated trucks.')}
-            </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
             <div className="rounded-2xl overflow-hidden border border-slate-200 bg-white shadow-sm flex flex-col">
               <img
                 src="/photos/refrigerated-truck.png"
                 alt={t('Gari la Baridi Mwaloni', 'KYC Refrigerated Truck at dock')}
-                className="w-full h-56 object-cover"
+                className="w-full h-52 sm:h-56 object-cover"
               />
-              <div className="p-6 flex flex-col gap-2">
+              <div className="p-5 sm:p-6 flex flex-col gap-2">
                 <h4 className="text-base font-bold text-slate-900 m-0">{t('Ukusanyaji wa Samaki Mwaloni', 'Dockside Landing Collection')}</h4>
                 <p className="text-xs text-slate-600 leading-relaxed m-0">
                   {t('Magari ya baridi yanakusanya makreti moja kwa moja kutoka kwenye boti katika mialo ya Kirumba, Katonga, na Mwigobero.', 'Light refrigerated trucks collect crates directly from fishing boats at Kirumba, Katonga, and Mwigobero piers with instant crate weighing and ice application.')}
@@ -424,9 +543,9 @@ export default function Landing({ go: nav }) {
               <img
                 src="/photos/cold-storage.png"
                 alt={t('Chumba cha Baridi na Usafirishaji', 'Cold storage facility dispatch')}
-                className="w-full h-56 object-cover"
+                className="w-full h-52 sm:h-56 object-cover"
               />
-              <div className="p-6 flex flex-col gap-2">
+              <div className="p-5 sm:p-6 flex flex-col gap-2">
                 <h4 className="text-base font-bold text-slate-900 m-0">{t('Usafirishaji Kiwandani & Vyumba vya Baridi', 'Factory Dispatch & Cold Storage')}</h4>
                 <p className="text-xs text-slate-600 leading-relaxed m-0">
                   {t('Usafirishaji wa baridi kwenda viwanda kama ABC Fish Processing ukiwa na kumbukumbu za joto, noti za mzigo, na ankara.', 'Chilled delivery to ABC Fish Processing and export factories with temperature data logging, delivery notes, and automated customer invoice generation.')}
@@ -437,37 +556,33 @@ export default function Landing({ go: nav }) {
         </div>
       </section>
 
-      {/* Pricing Section (SRS Specification in TZS) */}
-      <section id="pricing" className="py-16 md:py-20 max-w-7xl mx-auto px-6">
-        <div className="text-center max-w-3xl mx-auto mb-14">
+      <section id="pricing" className="py-12 md:py-20 max-w-7xl mx-auto px-5 sm:px-6">
+        <div className="text-center max-w-3xl mx-auto mb-10 md:mb-14">
           <span className="text-xs font-bold uppercase tracking-wider text-blue-700 block mb-2">
             {t('Bei Wazi', 'Transparent Pricing')}
           </span>
           <h2 className="text-2xl md:text-3xl font-bold text-slate-900">
             {t('Vifurushi Maalum kwa Wafanyabiashara wa Samaki Tanzania', 'Tailored to Tanzanian Fish Traders')}
           </h2>
-          <p className="text-slate-600 text-sm mt-3">
-            {t('Anza na mwalo mmoja, kisha panua biashara yako katika mialo yote ya Ziwa Victoria na Ziwa Tanganyika.', 'Start with one landing site, then scale to multi-branch operations across Lake Victoria and Lake Tanganyika.')}
-          </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
           {PLANS.map(p => (
             <div
               key={p.id}
-              className={`rounded-2xl p-8 bg-white border flex flex-col justify-between gap-6 shadow-sm ${
+              className={`rounded-2xl p-6 sm:p-8 bg-white border flex flex-col justify-between gap-6 shadow-sm ${
                 p.id === 'Business' ? 'border-blue-700 ring-2 ring-blue-700/20 shadow-md relative' : 'border-slate-200'
               }`}
             >
               {p.id === 'Business' && (
-                <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-blue-700 text-white text-[11px] font-bold px-3 py-1 rounded-full uppercase tracking-wider">
-                  {t('Kinachopendwa Zaidi', 'Most Popular For Traders')}
+                <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-blue-700 text-white text-[11px] font-bold px-3 py-1 rounded-full uppercase tracking-wider whitespace-nowrap">
+                  {t('Kinachopendwa Zaidi', 'Most Popular')}
                 </span>
               )}
               <div className="flex flex-col gap-3">
                 <h4 className="text-lg font-bold text-slate-900 m-0">{t('Kifurushi cha ', '')}{p.id}{t('', ' Plan')}</h4>
                 <div className="flex items-baseline gap-1">
-                  <span className="text-3xl font-extrabold font-mono text-slate-900">{tzs(p.price)}</span>
+                  <span className="text-2xl sm:text-3xl font-extrabold font-mono text-slate-900">{tzs(p.price)}</span>
                   <span className="text-xs text-slate-500 font-semibold">/{t('mwezi', 'month')}</span>
                 </div>
                 <p className="text-xs text-slate-600 m-0">{p.note}</p>
@@ -504,10 +619,9 @@ export default function Landing({ go: nav }) {
         </div>
       </section>
 
-      {/* FAQ Section */}
-      <section id="faq" className="py-16 md:py-20 bg-slate-100/70 border-t border-slate-200">
-        <div className="max-w-4xl mx-auto px-6">
-          <div className="text-center mb-12">
+      <section id="faq" className="py-12 md:py-20 bg-slate-100/70 border-t border-slate-200">
+        <div className="max-w-4xl mx-auto px-5 sm:px-6">
+          <div className="text-center mb-10">
             <span className="text-xs font-bold uppercase tracking-wider text-blue-700 block mb-2">
               {t('Maswali Yanayoulizwa Mara kwa Mara', 'Frequently Asked Questions')}
             </span>
@@ -516,12 +630,12 @@ export default function Landing({ go: nav }) {
             </h2>
           </div>
 
-          <div className="flex flex-col gap-4">
+          <div className="flex flex-col gap-3">
             {getFaqs(t).map(faq => (
-              <details key={faq.q} className="p-5 bg-white rounded-xl border border-slate-200 group">
-                <summary className="text-sm font-bold text-slate-900 cursor-pointer flex justify-between items-center list-none">
-                  {faq.q}
-                  <ChevronDown size={16} className="text-slate-400 group-open:rotate-180 transition-transform" />
+              <details key={faq.q} className="p-4 sm:p-5 bg-white rounded-xl border border-slate-200 group">
+                <summary className="text-sm font-bold text-slate-900 cursor-pointer flex justify-between items-center list-none gap-3">
+                  <span>{faq.q}</span>
+                  <ChevronDown size={16} className="text-slate-400 group-open:rotate-180 transition-transform shrink-0" />
                 </summary>
                 <p className="text-xs text-slate-600 leading-relaxed mt-3 pt-3 border-t border-slate-100 m-0">
                   {faq.a}
@@ -532,27 +646,8 @@ export default function Landing({ go: nav }) {
         </div>
       </section>
 
-      {/* Bottom CTA Banner */}
-      <section className="bg-gradient-to-r from-blue-950 via-blue-900 to-indigo-950 text-white py-16 px-6 text-center border-t border-blue-900">
-        <div className="max-w-3xl mx-auto flex flex-col items-center gap-5">
-          <h2 className="text-2xl sm:text-3xl font-bold m-0">
-            {t('Anza kutumia mfumo wa kidijitali leo.', 'Digitize your seafood supply chain today.')}
-          </h2>
-          <p className="text-sm text-blue-200 max-w-xl">
-            {t('Jiunge na wafanyabiashara wa samaki wa Ziwa Victoria na Ziwa Tanganyika wanaotumia FishTrade ERP.', 'Join fish traders across Lake Victoria and Lake Tanganyika moving from manual paper books to high-precision ERP management.')}
-          </p>
-          <button
-            onClick={() => nav('register')}
-            className="btn-primary py-3 px-8 text-sm bg-emerald-500 hover:bg-emerald-600 text-white font-bold shadow-lg"
-          >
-            {t('Fungua Akaunti ya Kampuni · Siku 14 Bure', 'Create Company Account · 14 Days Free')}
-          </button>
-        </div>
-      </section>
-
-      {/* Footer */}
       <footer className="bg-slate-950 text-slate-400 text-xs py-8 border-t border-slate-800">
-        <div className="max-w-7xl mx-auto px-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div className="max-w-7xl mx-auto px-5 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-center sm:text-left">
           <div className="flex items-center gap-2.5 text-white font-bold">
             <div className="w-8 h-8 rounded-lg bg-white p-0.5 flex items-center justify-center overflow-hidden">
               <img

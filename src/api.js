@@ -24,30 +24,72 @@ export const saveVersion = (id, v) => sessionStorage.setItem(VERSION_PREFIX + id
 
 // ── Error class ───────────────────────────────────────────────────────────────
 export class ApiError extends Error {
-  constructor(status, message, body) {
+  constructor(status, message, body, { isNetworkError = false, isTimeout = false } = {}) {
     super(message)
     this.status = status
     this.body = body
     this.isVersionConflict = status === 409 && body?.code === 'version_conflict'
     this.isUnauthorized = status === 401
+    this.isNetworkError = isNetworkError
+    this.isTimeout = isTimeout
   }
+}
+
+export const isLikelyNetworkError = err => {
+  if (!err) return false
+  if (err.isNetworkError || err.isTimeout) return true
+  if (typeof navigator !== 'undefined' && navigator.onLine === false) return true
+  if (err.name === 'AbortError') return true
+  if (err instanceof TypeError) return true
+  if (typeof err.status === 'number' && err.status >= 502 && err.status <= 504) return true
+  return false
+}
+
+function getRequestTimeoutMs() {
+  if (typeof navigator === 'undefined') return 12000
+  const conn = navigator.connection || navigator.mozConnection || navigator.webkitConnection
+  const eff = conn?.effectiveType
+  if (conn?.saveData || eff === 'slow-2g' || eff === '2g' || eff === '3g') return 18000
+  return 11000
 }
 
 // ── Core fetch ────────────────────────────────────────────────────────────────
 async function request(method, path, body, queryParams) {
+  if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+    throw new ApiError(0, 'Offline — queued for sync', null, { isNetworkError: true })
+  }
+
   const token = getToken()
   const url = new URL(BASE + path)
   if (queryParams) Object.entries(queryParams).forEach(([k, v]) => url.searchParams.set(k, v))
 
-  const resp = await fetch(url.toString(), {
-    method,
-    headers: {
-      'Content-Type': 'application/json',
-      'Accept': 'application/json',
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    },
-    body: body !== undefined ? JSON.stringify(body) : undefined,
-  })
+  const controller = new AbortController()
+  const timeoutMs = getRequestTimeoutMs()
+  const timer = setTimeout(() => controller.abort(), timeoutMs)
+
+  let resp
+  try {
+    resp = await fetch(url.toString(), {
+      method,
+      signal: controller.signal,
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      body: body !== undefined ? JSON.stringify(body) : undefined,
+    })
+  } catch (err) {
+    clearTimeout(timer)
+    const isTimeout = err?.name === 'AbortError'
+    throw new ApiError(
+      0,
+      isTimeout ? 'Network timeout on slow connection' : (err?.message || 'Network unavailable'),
+      null,
+      { isNetworkError: true, isTimeout }
+    )
+  }
+  clearTimeout(timer)
 
   let data = {}
   try { data = await resp.json() } catch (_) { }
@@ -56,7 +98,9 @@ async function request(method, path, body, queryParams) {
     const msg = typeof data.detail === 'string'
       ? data.detail
       : data.detail?.message || data.message || `HTTP ${resp.status}`
-    throw new ApiError(resp.status, msg, data.detail || data)
+    throw new ApiError(resp.status, msg, data.detail || data, {
+      isNetworkError: resp.status >= 502 && resp.status <= 504,
+    })
   }
   return data
 }
@@ -205,7 +249,8 @@ export const recordWaste = (bid, batchId, waste_kg, reason) => command(bid, `/ap
 export const paySupplier = (bid, d) => command(bid, `/api/v1/branches/${bid}/commands/supplier-payments`, d)
 
 // ── Sales ─────────────────────────────────────────────────────────────────────
-// ── Sales helpers �nexport const recordSale = (bid, d) => command(bid, `/api/v1/branches/${bid}/commands/sales`, d);
+// ── Sales helpers
+export const recordSale = (bid, d) => command(bid, `/api/v1/branches/${bid}/commands/sales`, d);
 
 // Fetch all sales for a branch
 export const listSales = (bid) => listCollection(bid, 'sales');

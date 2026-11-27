@@ -1,25 +1,19 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import {
   Users,
   Anchor,
-  Phone,
   MapPin,
   FileText,
   DollarSign,
   Plus,
   Search,
-  CheckCircle,
-  ExternalLink,
-  ChevronRight,
   ShieldCheck,
   CreditCard,
-  Fuel as FuelIcon,
-  Wrench,
-  ArrowDownRight,
-  RefreshCw
+  RefreshCw,
+  SlidersHorizontal
 } from 'lucide-react'
-import { useS, SITES, supBal, supFuelDebt, supMaintDebt, supAccountStatement, supPurchaseStatus, batchNet, batchDeduction, tot } from '../store'
-import { Modal, Field, Badge, FishPhoto, ViewBtn, f, tzs, fmtT } from '../ui'
+import { useS, SITES, supBal, supAccountStatement, supPurchaseStatus, batchDeduction, tot } from '../store'
+import { Modal, Field, Badge, ViewBtn, f, tzs } from '../ui'
 
 export default function Suppliers() {
   const { s, a, x, t, spLabel, catLabel } = useS()
@@ -27,7 +21,8 @@ export default function Suppliers() {
   const [viewSup, setViewSup] = useState(null)
   const [paySup, setPaySup] = useState(null)
   const [search, setSearch] = useState('')
-  const [catFilter, setCatFilter] = useState('all') // 'all' | 'internal' | 'independent' | 'company' | 'trader'
+  const [catFilter, setCatFilter] = useState('all')
+  const [showMobileFilter, setShowMobileFilter] = useState(false)
   const [sourceType, setSourceType] = useState('independent')
   const [payForm, setPayForm] = useState({ amt: '', m: 'M-Pesa (Mobile Money)' })
   const [refreshing, setRefreshing] = useState(false)
@@ -42,8 +37,16 @@ export default function Suppliers() {
     contactPerson: '',
   })
 
-  const totalKg = s.batches.reduce((t, b) => t + b.kg, 0)
-  const totalDebt = s.suppliers.reduce((t, x) => t + supBal(s, x.id), 0)
+  useEffect(() => {
+    const onQuickAdd = e => {
+      if (e.detail?.tab === 'suppliers') setOpen(true)
+    }
+    window.addEventListener('aquacatch:quick-add', onQuickAdd)
+    return () => window.removeEventListener('aquacatch:quick-add', onQuickAdd)
+  }, [])
+
+  const totalKg = s.batches.reduce((sum, b) => sum + b.kg, 0)
+  const totalDebt = s.suppliers.reduce((sum, item) => sum + supBal(s, item.id), 0)
 
   const getSourceType = sup => {
     if (sup.source_type) return sup.source_type
@@ -54,15 +57,23 @@ export default function Suppliers() {
     return 'independent'
   }
 
-  const filteredSuppliers = s.suppliers.filter(x => {
+  const shortSourceLabel = sup => {
+    const st = getSourceType(sup)
+    if (st === 'internal') return t('Kampuni', 'Company')
+    if (st === 'company') return t('Kikundi', 'Group')
+    if (st === 'trader') return t('Wakala', 'Agent')
+    return t('Mvuvi', 'Fisherman')
+  }
+
+  const filteredSuppliers = s.suppliers.filter(item => {
     const q = search.toLowerCase()
     const matchesSearch =
-      x.name.toLowerCase().includes(q) ||
-      (x.no || '').toLowerCase().includes(q) ||
-      (x.site || '').toLowerCase().includes(q) ||
-      (x.boat || '').toLowerCase().includes(q)
+      item.name.toLowerCase().includes(q) ||
+      (item.no || '').toLowerCase().includes(q) ||
+      (item.site || '').toLowerCase().includes(q) ||
+      (item.boat || '').toLowerCase().includes(q)
 
-    const st = getSourceType(x)
+    const st = getSourceType(item)
     const matchesCat =
       catFilter === 'all' ||
       (catFilter === 'internal' && st === 'internal') ||
@@ -89,8 +100,8 @@ export default function Suppliers() {
 
   return (
     <div className="page-body">
-      {/* Central Hub Navigation Bar: One Point of Control */}
-      <div className="flex flex-wrap items-center justify-between gap-2 p-2.5 bg-slate-900 text-white rounded-xl shadow-sm mb-1">
+      {/* Desktop Control Hub & Header */}
+      <div className="hidden md:flex flex-wrap items-center justify-between gap-2 p-2.5 bg-slate-900 text-white rounded-xl shadow-sm mb-1">
         <div className="flex items-center gap-2">
           <span className="text-xs font-bold text-blue-400 uppercase tracking-wider flex items-center gap-1.5 pl-1">
             <Users size={14} /> {t('Kituo Kikuu:', 'Control Hub:')}
@@ -99,22 +110,16 @@ export default function Suppliers() {
             <span className="px-2.5 py-1 rounded-md bg-blue-600 text-white font-bold">
               {t('1. Wasambazaji (Suppliers)', '1. Suppliers')}
             </span>
-            <a
-              href="#/crew"
-              className="px-2.5 py-1 rounded-md bg-slate-800 text-slate-300 hover:text-white hover:bg-slate-700 transition"
-            >
+            <a href="#/crew" className="px-2.5 py-1 rounded-md bg-slate-800 text-slate-300 hover:text-white hover:bg-slate-700 transition">
               {t('2. Wavuvi & Boti (Fishermen & Fleet)', '2. Fishermen & Fleet')}
             </a>
-            <a
-              href="#/buy"
-              className="px-2.5 py-1 rounded-md bg-slate-800 text-slate-300 hover:text-white hover:bg-slate-700 transition"
-            >
+            <a href="#/buy" className="px-2.5 py-1 rounded-md bg-slate-800 text-slate-300 hover:text-white hover:bg-slate-700 transition">
               {t('3. Manunuzi & Mizani (Procurement)', '3. Procurement & Catches')}
             </a>
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <button onClick={handleRefresh} disabled={refreshing} className="btn-secondary text-xs py-1.5 px-3 flex items-center gap-1.5" title={t('Sasisha data kutoka seva', 'Refresh data from server')}>
+          <button onClick={handleRefresh} disabled={refreshing} className="btn-secondary text-xs py-1.5 px-3 flex items-center gap-1.5">
             <RefreshCw size={13} className={refreshing ? 'animate-spin' : ''} />
             {refreshing ? t('Inasasisha...', 'Refreshing...') : t('Sasisha', 'Refresh')}
           </button>
@@ -124,64 +129,46 @@ export default function Suppliers() {
         </div>
       </div>
 
-      {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="hidden md:flex md:items-center justify-between gap-4">
         <div>
           <h2 className="text-xl font-bold text-slate-900 m-0">{t('Wavuvi na Wasambazaji', 'Fishermen & Supplier Management')}</h2>
           <p className="text-xs text-slate-500 m-0 mt-0.5">
             {t('Daftari la wavuvi, mikataba ya BMU, historia ya samaki walioletwa, na madeni.', 'Digital supplier registry, landing site BMU agreements, historical deliveries, and debt tracking.')}
           </p>
         </div>
-        <div className="flex items-center gap-2">
-          <button onClick={handleRefresh} disabled={refreshing} className="btn-secondary flex items-center gap-1.5" title={t('Sasisha data kutoka seva', 'Refresh data from server')}>
-            <RefreshCw size={15} className={refreshing ? 'animate-spin' : ''} />
-            {refreshing ? t('Inasasisha...', 'Refreshing...') : t('Sasisha', 'Refresh')}
-          </button>
-          <button onClick={() => setOpen(true)} className="btn-primary">
-            <Plus size={16} /> {t('Sajili Mvuvi / BMU Mpya', 'Register New Supplier / BMU')}
-          </button>
-        </div>
+        <button onClick={() => setOpen(true)} className="btn-primary">
+          <Plus size={16} /> {t('Sajili Mvuvi / BMU Mpya', 'Register New Supplier / BMU')}
+        </button>
       </div>
 
-      {/* KPI Cards */}
-      <div className="kpi-grid">
+      {/* Desktop KPI Cards */}
+      <div className="hidden md:grid kpi-grid">
         <div className="kpi-card">
-          <div className="kpi-icon-wrap">
-            <Users size={22} />
-          </div>
+          <div className="kpi-icon-wrap"><Users size={22} /></div>
           <div className="kpi-content">
             <small>{t('Wavuvi Waliosajiliwa', 'Active Registered Suppliers')}</small>
             <b>{s.suppliers.length} <span className="text-xs font-sans text-slate-400">{t('wavuvi', 'fishers')}</span></b>
             <span className="kpi-sub">{t('Ziwa Victoria & Tanganyika', 'Lake Victoria & Tanganyika')}</span>
           </div>
         </div>
-
         <div className="kpi-card">
-          <div className="kpi-icon-wrap amber">
-            <Anchor size={22} />
-          </div>
+          <div className="kpi-icon-wrap amber"><Anchor size={22} /></div>
           <div className="kpi-content">
             <small>{t('Jumla ya Samaki Walioletwa', 'Total Fish Sourced')}</small>
             <b>{f(totalKg)} <span className="text-xs font-sans text-slate-400">kg</span></b>
             <span className="kpi-sub">{t('Katika mialo yote', 'Across landing stations')}</span>
           </div>
         </div>
-
         <div className="kpi-card">
-          <div className="kpi-icon-wrap green">
-            <DollarSign size={22} />
-          </div>
+          <div className="kpi-icon-wrap green"><DollarSign size={22} /></div>
           <div className="kpi-content">
             <small>{t('Jumla ya Madeni ya Wavuvi', 'Outstanding Balances')}</small>
             <b className="text-rose-700">{tzs(totalDebt)}</b>
             <span className="kpi-sub">{t('Yanayosubiri malipo', 'Pending disbursement')}</span>
           </div>
         </div>
-
         <div className="kpi-card">
-          <div className="kpi-icon-wrap purple">
-            <ShieldCheck size={22} />
-          </div>
+          <div className="kpi-icon-wrap purple"><ShieldCheck size={22} /></div>
           <div className="kpi-content">
             <small>{t('Uzingatiaji wa Sheria za BMU', 'BMU Agreement Compliance')}</small>
             <b>98.4%</b>
@@ -190,44 +177,115 @@ export default function Suppliers() {
         </div>
       </div>
 
-      {/* Classification Filters & Search Bar */}
-      <div className="flex flex-col gap-3">
-        <div className="flex items-center gap-2 overflow-x-auto pb-1 text-xs">
+      {/* ─── SEARCH + FILTER CHIPS (Screen 4 Mobile + Desktop) ─── */}
+      <div className="flex flex-col gap-2.5">
+        <div className="flex items-center gap-2">
+          <div className="relative flex-1">
+            <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+            <input
+              type="text"
+              placeholder={t('Tafuta mvuvi au msambazaji...', 'Search suppliers...')}
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              className="input-field pl-10 rounded-2xl md:rounded-xl"
+            />
+          </div>
+          <button
+            type="button"
+            onClick={() => setShowMobileFilter(v => !v)}
+            aria-label="Filter options"
+            className="md:hidden w-11 h-11 rounded-2xl bg-white border border-slate-200 text-slate-700 flex items-center justify-center shrink-0"
+          >
+            <SlidersHorizontal size={17} />
+          </button>
+        </div>
+
+        {/* Category Chips matching Screen 4 */}
+        <div className={`flex items-center gap-2 overflow-x-auto no-scrollbar pb-0.5 text-xs ${showMobileFilter ? '' : ''}`}>
           {[
-            { id: 'all', label: t('Wasambazaji Wote', 'All Sources') },
-            { id: 'internal', label: t('01 · Wavuvi wa Kampuni', '01 · Company-managed') },
-            { id: 'independent', label: t('02 · Wavuvi Huru', '02 · Independent') },
-            { id: 'company', label: t('03 · Kampuni za Uvuvi', '03 · Fishing Companies') },
-            { id: 'trader', label: t('04 · Madalali & Mawakala', '04 · Traders & Agents') },
-          ].map(f => (
+            { id: 'all', mobile: t('Wote', 'All'), desktop: t('Wasambazaji Wote', 'All Sources') },
+            { id: 'independent', mobile: t('Wavuvi', 'Fishermen'), desktop: t('02 · Wavuvi Huru', '02 · Independent') },
+            { id: 'company', mobile: t('Vikundi', 'Group'), desktop: t('03 · Kampuni za Uvuvi', '03 · Fishing Companies') },
+            { id: 'trader', mobile: t('Wakala', 'Agent'), desktop: t('04 · Madalali & Mawakala', '04 · Traders & Agents') },
+            { id: 'internal', mobile: t('Kampuni', 'Company'), desktop: t('01 · Wavuvi wa Kampuni', '01 · Company-managed') },
+          ].map(chip => (
             <button
-              key={f.id}
-              onClick={() => setCatFilter(f.id)}
-              className={`px-3 py-1.5 rounded-lg font-medium whitespace-nowrap transition-colors ${
-                catFilter === f.id
-                  ? 'bg-blue-600 text-white font-semibold'
+              key={chip.id}
+              type="button"
+              onClick={() => setCatFilter(chip.id)}
+              className={`px-3.5 py-2 md:py-1.5 rounded-full md:rounded-lg font-semibold whitespace-nowrap transition-colors shrink-0 ${
+                catFilter === chip.id
+                  ? 'bg-[#052d56] text-white shadow-xs'
                   : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'
               }`}
             >
-              {f.label}
+              <span className="md:hidden">{chip.mobile}</span>
+              <span className="hidden md:inline">{chip.desktop}</span>
             </button>
           ))}
         </div>
-
-        <div className="relative w-full">
-          <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
-          <input
-            type="text"
-            placeholder={t('Tafuta mvuvi kwa jina, namba (SUP-001), boti au mwalo...', 'Search suppliers by name, code (SUP-001), boat or landing site...')}
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            className="input-field pl-10 text-xs"
-          />
-        </div>
       </div>
 
-      {/* Suppliers Table */}
-      <div className="data-table-wrap">
+      {/* ─── MOBILE SUPPLIERS CARD LIST (Screen 4 exact card balance) ─── */}
+      <div className="md:hidden space-y-2.5">
+        {filteredSuppliers.map(sup => {
+          const supBatches = s.batches.filter(b => b.sup === sup.id)
+          const supKg = supBatches.reduce((sum, b) => sum + b.kg, 0)
+          const bal = supBal(s, sup.id)
+          const code = sup.no || `SUP-${String(sup.id).slice(-4).toUpperCase()}`
+          const initials = sup.name.split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase()
+          return (
+            <div
+              key={sup.id}
+              onClick={() => setViewSup(sup)}
+              className="mobile-card flex items-center justify-between gap-3 cursor-pointer active:scale-[0.99] transition"
+            >
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="w-11 h-11 rounded-full bg-[#e6effa] text-[#052d56] font-extrabold flex items-center justify-center text-sm border border-[#c7dbf2] shrink-0">
+                  {initials || 'SP'}
+                </div>
+                <div className="min-w-0">
+                  <b className="text-[14px] font-bold text-slate-900 block truncate">{sup.name}</b>
+                  <span className="text-[11.5px] text-slate-500 block truncate">
+                    {code} · {shortSourceLabel(sup)}
+                  </span>
+                  <span className="text-[11.5px] text-slate-500 block truncate">
+                    {sup.site || '-'} · <span className="font-mono font-semibold text-slate-700">{f(supKg)} kg</span>
+                  </span>
+                </div>
+              </div>
+
+              <div className="flex flex-col items-end gap-1.5 shrink-0">
+                <span className="px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-[11px] font-bold">
+                  {t('Hai', 'Active')}
+                </span>
+                {bal > 0 && (
+                  <button
+                    type="button"
+                    onClick={e => {
+                      e.stopPropagation()
+                      setPaySup(sup)
+                      setPayForm({ amt: String(bal), m: 'M-Pesa (Mobile Money)' })
+                    }}
+                    className="text-[11px] font-mono font-bold text-rose-600 hover:underline"
+                  >
+                    {tzs(bal)}
+                  </button>
+                )}
+              </div>
+            </div>
+          )
+        })}
+
+        {filteredSuppliers.length === 0 && (
+          <div className="mobile-card p-8 text-center text-xs text-slate-500">
+            {t('Hakuna mvuvi au msambazaji aliyepatikana.', 'No suppliers matched your search.')}
+          </div>
+        )}
+      </div>
+
+      {/* ─── DESKTOP TABLE (md+) ─── */}
+      <div className="hidden md:block data-table-wrap">
         <table className="data-table">
           <thead>
             <tr>
@@ -346,32 +404,12 @@ export default function Suppliers() {
               <label className="text-xs font-bold text-slate-700 block mb-2">
                 {t('Nani anasambaza samaki? (Aina ya Chanzo)', 'Who is supplying the fish? (Source Classification)')}
               </label>
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 {[
-                  {
-                    id: 'internal',
-                    title: t('01 · Wavuvi wa Kampuni', '01 · Company-managed'),
-                    desc: t('Wavuvi wanaosimamiwa na kituo chenu (boti, mafuta, vifaa)', 'Fishermen managed by your fleet with company boats & fuel'),
-                    cat: 'Company-managed Fishermen',
-                  },
-                  {
-                    id: 'independent',
-                    title: t('02 · Mvuvi Huru', '02 · Independent Fisher'),
-                    desc: t('Wavuvi au wamiliki wa boti wanaouza moja kwa moja', 'Independent boat owners selling directly to buying site'),
-                    cat: 'Independent Fisherman',
-                  },
-                  {
-                    id: 'company',
-                    title: t('03 · Kampuni ya Uvuvi', '03 · Fishing Company'),
-                    desc: t('Kampuni au kikundi cha BMU chenye wavuvi wake', 'External fishing company or BMU cooperative supplying fish'),
-                    cat: 'Other Fishing Company / BMU',
-                  },
-                  {
-                    id: 'trader',
-                    title: t('04 · Mfanyabiashara / Dalali', '04 · Trader & Agent'),
-                    desc: t('Mawakala na wakusanyaji samaki mialoni', 'Traders or middlemen collecting fish across landing points'),
-                    cat: 'Dealer / Fish Trader',
-                  },
+                  { id: 'internal', title: t('01 · Wavuvi wa Kampuni', '01 · Company-managed'), desc: t('Wavuvi wanaosimamiwa na kituo chenu (boti, mafuta, vifaa)', 'Fishermen managed by your fleet with company boats & fuel'), cat: 'Company-managed Fishermen' },
+                  { id: 'independent', title: t('02 · Mvuvi Huru', '02 · Independent Fisher'), desc: t('Wavuvi au wamiliki wa boti wanaouza moja kwa moja', 'Independent boat owners selling directly to buying site'), cat: 'Independent Fisherman' },
+                  { id: 'company', title: t('03 · Kampuni ya Uvuvi', '03 · Fishing Company'), desc: t('Kampuni au kikundi cha BMU chenye wavuvi wake', 'External fishing company or BMU cooperative supplying fish'), cat: 'Other Fishing Company / BMU' },
+                  { id: 'trader', title: t('04 · Mfanyabiashara / Dalali', '04 · Trader & Agent'), desc: t('Mawakala na wakusanyaji samaki mialoni', 'Traders or middlemen collecting fish across landing points'), cat: 'Dealer / Fish Trader' },
                 ].map(opt => (
                   <button
                     key={opt.id}
@@ -399,8 +437,8 @@ export default function Suppliers() {
               sourceType === 'company'
                 ? t('Jina la Kampuni au Kikundi cha BMU', 'Company or BMU Group Name')
                 : sourceType === 'trader'
-                ? t('Jina la Dalali / Mfanyabiashara', 'Trader / Agent Name')
-                : t('Jina Kamili la Mvuvi', 'Fisherman Full Name')
+                  ? t('Jina la Dalali / Mfanyabiashara', 'Trader / Agent Name')
+                  : t('Jina Kamili la Mvuvi', 'Fisherman Full Name')
             }>
               <input
                 type="text"
@@ -411,7 +449,7 @@ export default function Suppliers() {
               />
             </Field>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <Field label={t('Namba ya Simu', 'Phone Number')}>
                 <input
                   type="tel"
@@ -433,7 +471,7 @@ export default function Suppliers() {
               </Field>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <Field label={t('Mwalo Mkuu / Eneo', 'Landing Site / Area')}>
                 <input
                   type="text"
@@ -444,27 +482,18 @@ export default function Suppliers() {
                   className="input-field"
                 />
                 <datalist id="landing-sites-sup">
-                  {SITES.map(x => (
-                    <option key={x} value={x} />
-                  ))}
+                  {SITES.map(siteName => <option key={siteName} value={siteName} />)}
                 </datalist>
               </Field>
 
-              <Field label={
-                sourceType === 'company'
-                  ? t('Mwakilishi / Msimamizi', 'Contact Person')
-                  : t('Jina au Namba ya Boti', 'Boat Name or Reg')
-              }>
+              <Field label={sourceType === 'company' ? t('Mwakilishi / Msimamizi', 'Contact Person') : t('Jina au Namba ya Boti', 'Boat Name or Reg')}>
                 <input
                   type="text"
                   placeholder={sourceType === 'company' ? 'mf. Hamisi (Meneja)' : 'mf. MV Victoria 02'}
                   value={sourceType === 'company' ? (d.contactPerson || '') : d.boat}
                   onChange={e => {
-                    if (sourceType === 'company') {
-                      setD({ ...d, contactPerson: e.target.value, boat: e.target.value })
-                    } else {
-                      setD({ ...d, boat: e.target.value })
-                    }
+                    if (sourceType === 'company') setD({ ...d, contactPerson: e.target.value, boat: e.target.value })
+                    else setD({ ...d, boat: e.target.value })
                   }}
                   className="input-field"
                 />
@@ -475,12 +504,7 @@ export default function Suppliers() {
               type="button"
               disabled={!d.name.trim()}
               onClick={() => {
-                a.addSup({
-                  ...d,
-                  name: d.name.trim(),
-                  phone: d.phone.trim(),
-                  source_type: sourceType,
-                })
+                a.addSup({ ...d, name: d.name.trim(), phone: d.phone.trim(), source_type: sourceType })
                 setOpen(false)
                 setD({
                   name: '',
@@ -501,13 +525,12 @@ export default function Suppliers() {
         </Modal>
       )}
 
-      {/* Supplier Ledger & Comprehensive Financial Statement Modal */}
+      {/* Supplier Ledger & Financial Statement Modal */}
       {viewSup && (() => {
         const statement = supAccountStatement(s, viewSup.id)
-        const supBatches = s.batches.filter(b => b.sup === viewSup.id)
         const supPayments = (s.pays || []).filter(p => p.sup === viewSup.id)
         const purchaseRows = supPurchaseStatus(s, viewSup.id)
-        const supFuelIssues = (s.fuelIssues || []).filter(f => f.supId === viewSup.id)
+        const supFuelIssues = (s.fuelIssues || []).filter(fl => fl.supId === viewSup.id)
         const supWorkOrders = (s.maintenanceOrders || []).filter(m => m.supId === viewSup.id)
         const supSettlements = (s.settlements || []).filter(st => st.supId === viewSup.id)
         const totalPaidCash = supPayments.reduce((sum, p) => sum + (+p.amt || 0), 0)
@@ -521,7 +544,6 @@ export default function Suppliers() {
             maxWidth="max-w-3xl"
           >
             <div className="flex flex-col gap-4 text-xs">
-              {/* Financial Balance Summary Banner */}
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5 p-3 bg-slate-50 border border-slate-200 rounded-xl text-center">
                 <div>
                   <span className="text-[10px] uppercase font-bold text-slate-400 block">{t('Samaki Aliyouza', 'Gross Catch')}</span>
@@ -543,13 +565,14 @@ export default function Suppliers() {
                   <span className="text-[10px] uppercase font-bold text-red-700 block">{t('Madeni ya Mafuta/Boti', 'Fuel/Maint Debt')}</span>
                   <b className="font-mono text-red-600 text-sm">-{tzs(statement.totalDebt)}</b>
                 </div>
-                <div className="border-l border-slate-200 pl-2">
-                  <span className="text-[10px] uppercase font-bold text-slate-700 block">{t('Salio Halisi la Mvuvi', 'Net Fisherman Balance')}</span>
+                <div>
+                  <span className="text-[10px] uppercase font-bold text-slate-700 block">{t('Salio Halisi', 'Net Balance')}</span>
                   <b className={`font-mono text-sm font-extrabold ${statement.netBalance >= 0 ? 'text-emerald-700' : 'text-red-600'}`}>
                     {tzs(statement.netBalance)}
                   </b>
                 </div>
               </div>
+
               <div className="flex flex-wrap items-center gap-2 text-[11px] text-slate-600">
                 <Badge variant="blue">{t('Samaki Wanaodaiwa', 'Fish Owed')}: {tzs(statement.fishOwed)}</Badge>
                 <Badge variant="amber">{t('Mafuta', 'Fuel')}: {tzs(statement.fuelDebt)}</Badge>
@@ -557,10 +580,9 @@ export default function Suppliers() {
                 <Badge variant="neutral">{purchaseRows.length} {t('manunuzi', 'purchases')}</Badge>
               </div>
 
-              {/* SECTION 1: CATCH DELIVERIES */}
               <div>
                 <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider mb-1.5 flex items-center justify-between">
-                  <span>{t('1. Samaki Walioletwa', '1. Fish Catch Delivered')} ({s.batches.filter(b => b.sup === viewSup.id).length})</span>
+                  <span>{t('1. Samaki Walioletwa', '1. Fish Catch Delivered')} ({purchaseRows.length})</span>
                   <span className="text-slate-500 font-normal">{t('Mizani ya Mwalo', 'Landing Weighbridge')}</span>
                 </h4>
                 <div className="data-table-wrap max-h-44">
@@ -605,16 +627,13 @@ export default function Suppliers() {
                         )
                       })}
                       {purchaseRows.length === 0 && (
-                        <tr>
-                          <td colSpan={10} className="text-center py-3 text-slate-400">{t('Hakuna manunuzi yaliyorekodiwa bado.', 'No purchases recorded yet.')}</td>
-                        </tr>
+                        <tr><td colSpan={10} className="text-center py-3 text-slate-400">{t('Hakuna manunuzi yaliyorekodiwa bado.', 'No purchases recorded yet.')}</td></tr>
                       )}
                     </tbody>
                   </table>
                 </div>
               </div>
 
-              {/* SECTION 2: FUEL DISPENSED & DEBT */}
               <div>
                 <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider mb-1.5 flex items-center justify-between">
                   <span>{t('2. Mafuta Yaliyotolewa Mwalo', '2. Dock Fuel Issues')} ({supFuelIssues.length})</span>
@@ -646,16 +665,13 @@ export default function Suppliers() {
                         </tr>
                       ))}
                       {supFuelIssues.length === 0 && (
-                        <tr>
-                          <td colSpan={7} className="text-center py-3 text-slate-400">{t('Hakuna mafuta yaliyorekodiwa kwa mvuvi huyu.', 'No fuel issues logged for this fisherman.')}</td>
-                        </tr>
+                        <tr><td colSpan={7} className="text-center py-3 text-slate-400">{t('Hakuna mafuta yaliyorekodiwa kwa mvuvi huyu.', 'No fuel issues logged for this fisherman.')}</td></tr>
                       )}
                     </tbody>
                   </table>
                 </div>
               </div>
 
-              {/* SECTION 3: BOAT MAINTENANCE WORK ORDERS */}
               <div>
                 <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider mb-1.5 flex items-center justify-between">
                   <span>{t('3. Matengenezo ya Boti', '3. Marine Fleet Maintenance')} ({supWorkOrders.length})</span>
@@ -687,16 +703,13 @@ export default function Suppliers() {
                         </tr>
                       ))}
                       {supWorkOrders.length === 0 && (
-                        <tr>
-                          <td colSpan={7} className="text-center py-3 text-slate-400">{t('Hakuna matengenezo ya boti kwa mvuvi huyu.', 'No boat maintenance work orders for this fisherman.')}</td>
-                        </tr>
+                        <tr><td colSpan={7} className="text-center py-3 text-slate-400">{t('Hakuna matengenezo ya boti kwa mvuvi huyu.', 'No boat maintenance work orders for this fisherman.')}</td></tr>
                       )}
                     </tbody>
                   </table>
                 </div>
               </div>
 
-              {/* SECTION 4: SETTLEMENTS & CASH CLEARANCES */}
               <div>
                 <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider mb-1.5 flex items-center justify-between">
                   <span>{t('4. Makato ya Samaki & Malipo', '4. Catch Deductions & Settlements')} ({supSettlements.length})</span>
@@ -730,19 +743,16 @@ export default function Suppliers() {
                         </tr>
                       ))}
                       {supSettlements.length === 0 && (
-                        <tr>
-                          <td colSpan={8} className="text-center py-3 text-slate-400">{t('Hakuna makato yaliyorekodiwa bado.', 'No catch deductions settled yet.')}</td>
-                        </tr>
+                        <tr><td colSpan={8} className="text-center py-3 text-slate-400">{t('Hakuna makato yaliyorekodiwa bado.', 'No catch deductions settled yet.')}</td></tr>
                       )}
                     </tbody>
                   </table>
                 </div>
               </div>
 
-              {/* SECTION 5: CASH & MOBILE MONEY PAYMENTS RECEIVED */}
               <div>
                 <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider mb-1.5 flex items-center justify-between">
-                  <span>{t('5. Malipo Aliyopokea (M-Pesa / Benki / Taslimu)', '5. Payments Received (Mobile Money / Bank / Cash)')} ({supPayments.length})</span>
+                  <span>{t('5. Malipo Aliyopokea', '5. Payments Received')} ({supPayments.length})</span>
                   <span className="text-emerald-700 font-bold">{t('Jumla:', 'Total:')} {tzs(totalPaidCash)}</span>
                 </h4>
                 <div className="data-table-wrap max-h-32">
@@ -767,16 +777,13 @@ export default function Suppliers() {
                         </tr>
                       ))}
                       {supPayments.length === 0 && (
-                        <tr>
-                          <td colSpan={5} className="text-center py-3 text-slate-400">{t('Hakuna malipo yaliyorekodiwa bado.', 'No payments recorded yet.')}</td>
-                        </tr>
+                        <tr><td colSpan={5} className="text-center py-3 text-slate-400">{t('Hakuna malipo yaliyorekodiwa bado.', 'No payments recorded yet.')}</td></tr>
                       )}
                     </tbody>
                   </table>
                 </div>
               </div>
 
-              {/* Quick Actions Footer */}
               <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-200">
                 <div className="flex items-center gap-2">
                   {supBal(s, viewSup.id) > 0 && (
@@ -793,19 +800,11 @@ export default function Suppliers() {
                       <CreditCard size={13} /> {t('Lipa Salio Sasa', 'Pay Balance Now')}
                     </button>
                   )}
-                  <button
-                    type="button"
-                    onClick={() => window.print()}
-                    className="btn-secondary text-xs"
-                  >
+                  <button type="button" onClick={() => window.print()} className="btn-secondary text-xs">
                     <FileText size={13} /> {t('Chapa Taarifa', 'Print Statement')}
                   </button>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => setViewSup(null)}
-                  className="btn-secondary text-xs"
-                >
+                <button type="button" onClick={() => setViewSup(null)} className="btn-secondary text-xs">
                   {t('Funga', 'Close')}
                 </button>
               </div>
