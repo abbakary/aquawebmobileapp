@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import {
   Truck,
   MapPin,
@@ -13,15 +13,26 @@ import {
   User
 } from 'lucide-react'
 import { useS, SITES, trCost, refLabel, nowL } from '../store'
+import { useDevice } from '../device'
 import { Modal, Field, Badge, DetailModal, ViewBtn, f, tzs, fmtT, atOf } from '../ui'
 
 export default function Transport() {
   const { s, a, t, spLabel } = useS()
+  const { lowBandwidthMode } = useDevice()
   const [tab, setTab] = useState('deliveries') // 'deliveries' or 'costs'
   const [dispatchOrder, setDispatchOrder] = useState(null)
   const [viewDispatch, setViewDispatch] = useState(null)
   const [viewTrip, setViewTrip] = useState(null)
   const [costModal, setCostModal] = useState(false)
+
+  useEffect(() => {
+    const onQuickAdd = e => {
+      if (e.detail?.tab !== 'transport') return
+      setCostModal(true)
+    }
+    window.addEventListener('aquacatch:quick-add', onQuickAdd)
+    return () => window.removeEventListener('aquacatch:quick-add', onQuickAdd)
+  }, [])
   const [dispForm, setDispForm] = useState({ veh: 'T 342 EDK (KYC 3-Ton Refrigerated)', drv: 'Juma Ramadhani', st: 'In transit', temp: '1.8°C' })
   const [costForm, setCostForm] = useState({
     type: 'Industry Delivery',
@@ -75,7 +86,7 @@ export default function Transport() {
             {t('Ufuatiliaji wa magari ya baridi (KYC), joto safarini, na hati za usafirishaji.', 'Cold chain vehicle monitoring (KYC light trucks & insulated carriers), temperature logging, and dispatch notes.')}
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="hidden md:flex items-center gap-2">
           <button onClick={() => setCostModal(true)} className="btn-primary">
             <Plus size={16} /> {t('Rekodi Safari / Gharama ya Usafiri', 'Log Transport Run / Trip Cost')}
           </button>
@@ -84,24 +95,28 @@ export default function Transport() {
 
       {/* Visual Cold Chain Fleet Header */}
       <div className="panel p-0 overflow-hidden flex flex-col md:flex-row items-center border border-slate-200">
-        <div className="w-full md:w-56 h-28 shrink-0 bg-slate-900 relative">
-          <img
-            src="/photos/refrigerated-truck.png"
-            alt="Refrigerated Truck Loading"
-            className="w-full h-full object-cover"
-          />
-          <span className="absolute bottom-1.5 left-1.5 bg-slate-950/80 text-amber-300 text-[10px] font-mono px-1.5 py-0.5 rounded font-bold backdrop-blur-sm">
-            KYC COLD FLEET
-          </span>
-        </div>
-        <div className="p-3.5 flex-1 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        {!lowBandwidthMode && (
+          <div className="hidden md:block w-full md:w-56 h-28 shrink-0 bg-slate-900 relative">
+            <img
+              src="/photos/refrigerated-truck.png"
+              alt="Refrigerated Truck Loading"
+              loading="lazy"
+              decoding="async"
+              className="w-full h-full object-cover"
+            />
+            <span className="absolute bottom-1.5 left-1.5 bg-slate-950/80 text-amber-300 text-[10px] font-mono px-1.5 py-0.5 rounded font-bold backdrop-blur-sm">
+              KYC COLD FLEET
+            </span>
+          </div>
+        )}
+        <div className="p-3.5 flex-1 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
           <div>
             <h3 className="text-sm font-bold text-slate-900 m-0">Insulated Transport Fleet (Pier to Factory Gate)</h3>
             <p className="text-xs text-slate-500 m-0 mt-0.5">
               Tanzanian registration plates (T 342 EDK, T 819 DXZ) with continuous temperature compliance tracking and freight cost apportionment.
             </p>
           </div>
-          <span className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-emerald-50 text-emerald-800 border border-emerald-200 flex items-center gap-1.5 whitespace-nowrap shrink-0">
+          <span className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-emerald-50 text-emerald-800 border border-emerald-200 inline-flex items-center gap-1.5 whitespace-nowrap self-start sm:self-auto shrink-0">
             <CheckCircle2 size={14} className="text-emerald-600" /> Active Fleet GPS &amp; Chill Logged
           </span>
         </div>
@@ -154,21 +169,47 @@ export default function Transport() {
         </div>
       </div>
 
+      {/* Mobile Pill Tab Switcher (< md) */}
+      <div className="flex md:hidden items-center gap-2 bg-slate-200/80 p-1 rounded-xl">
+        <button
+          type="button"
+          onClick={() => setTab('deliveries')}
+          className={`flex-1 min-h-[40px] px-3 py-1.5 rounded-lg text-xs font-bold transition ${
+            tab === 'deliveries' ? 'bg-[#052d56] text-white shadow-sm' : 'text-slate-600'
+          }`}
+        >
+          {t('Usafirishaji', 'Dispatches')} ({s.sales.length})
+        </button>
+        <button
+          type="button"
+          onClick={() => setTab('costs')}
+          className={`flex-1 min-h-[40px] px-3 py-1.5 rounded-lg text-xs font-bold transition ${
+            tab === 'costs' ? 'bg-[#052d56] text-white shadow-sm' : 'text-slate-600'
+          }`}
+        >
+          {t('Gharama za Safari', 'Trip Costs')} ({trips.length})
+        </button>
+      </div>
+
       {/* Real KYC Cold Chain Vehicle Showcase & Live Dispatches */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Real Vehicle Asset Showcase */}
-        <div className="panel lg:col-span-1 p-0 overflow-hidden">
-          <div className="relative h-44 bg-slate-900">
-            <img
-              src="/assets/aistudio/image_eec00c9e.png"
-              alt={t('Gari la Baridi Mwaloni', 'KYC Refrigerated Truck loading fish at pier')}
-              className="w-full h-full object-cover opacity-75"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-900/40 to-transparent p-4 flex flex-col justify-end">
-              <span className="text-[11px] font-mono text-sky-400 uppercase tracking-wider">{t('Magari ya Kampuni', 'Fleet Asset')}</span>
-              <h4 className="text-base font-bold text-white m-0">{t('Magari ya Baridi ya KYC', 'KYC Light Refrigerated Carriers')}</h4>
+      <div className={`grid grid-cols-1 lg:grid-cols-3 gap-6 ${tab !== 'deliveries' ? 'hidden md:grid' : ''}`}>
+        {/* Real Vehicle Asset Showcase (desktop) */}
+        <div className="hidden lg:flex panel lg:col-span-1 p-0 overflow-hidden">
+          {!lowBandwidthMode && (
+            <div className="relative h-44 bg-slate-900">
+              <img
+                src="/assets/aistudio/image_eec00c9e.png"
+                alt={t('Gari la Baridi Mwaloni', 'KYC Refrigerated Truck loading fish at pier')}
+                loading="lazy"
+                decoding="async"
+                className="w-full h-full object-cover opacity-75"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-900/40 to-transparent p-4 flex flex-col justify-end">
+                <span className="text-[11px] font-mono text-sky-400 uppercase tracking-wider">{t('Magari ya Kampuni', 'Fleet Asset')}</span>
+                <h4 className="text-base font-bold text-white m-0">{t('Magari ya Baridi ya KYC', 'KYC Light Refrigerated Carriers')}</h4>
+              </div>
             </div>
-          </div>
+          )}
           <div className="p-4 flex flex-col gap-2.5 text-xs text-slate-600">
             <div className="flex justify-between border-b border-slate-100 pb-2">
               <span className="text-slate-500">{t('Aina ya Magari:', 'Fleet Standard:')}</span>
@@ -188,7 +229,7 @@ export default function Transport() {
           </div>
         </div>
 
-        {/* Deliveries & Dispatches Table */}
+        {/* Deliveries & Dispatches */}
         <div className="panel lg:col-span-2">
           <div className="panel-header">
             <div>
@@ -196,7 +237,56 @@ export default function Transport() {
               <p>{t('Usafirishaji kwenda ABC Fish Processing, Victoria Perch na wateja wa nje', 'Delivery dispatches to ABC Fish Processing, Victoria Perch & Export clients')}</p>
             </div>
           </div>
-          <div className="data-table-wrap">
+
+          {/* Mobile Dispatches Cards (< md) */}
+          <div className="md:hidden flex flex-col gap-2.5">
+            {[...s.sales].reverse().map(y => {
+              const cusName = s.customers.find(z => z.id === y.cus)?.name || y.cus
+              return (
+                <div key={y.id} className="mobile-card flex flex-col gap-2.5">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <b className="text-sm text-slate-900 block truncate">{cusName}</b>
+                      <span className="text-[11px] font-mono text-blue-700">{y.no} · {y.date}</span>
+                    </div>
+                    <Badge variant={y.dis.st === 'Delivered' ? 'green' : 'amber'}>
+                      {y.dis.st === 'Delivered' ? t('Imefika', 'Delivered') : t('Iko Njiani', 'In transit')}
+                    </Badge>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 text-xs bg-slate-50 rounded-xl p-2 border border-slate-100">
+                    <div>
+                      <span className="text-[10px] text-slate-400 block">{t('Samaki & Uzito', 'Cargo')}</span>
+                      <b className="text-slate-900">{spLabel(y.sp)} · <span className="font-mono">{f(y.kg)} kg</span></b>
+                    </div>
+                    <div>
+                      <span className="text-[10px] text-slate-400 block">{t('Gari & Dereva', 'Vehicle')}</span>
+                      <b className="text-slate-800 block truncate">{y.dis.veh || 'T 342 EDK'}</b>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <ViewBtn onClick={() => setViewDispatch({ ...y, cusName })} />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setDispatchOrder(y)
+                        setDispForm({
+                          veh: y.dis.veh || 'T 342 EDK (KYC 3-Ton Refrigerated)',
+                          drv: y.dis.drv || 'Juma Ramadhani',
+                          st: y.dis.st || 'In transit',
+                          temp: '1.8°C'
+                        })
+                      }}
+                      className="btn-primary flex-1 text-xs bg-[#052d56]"
+                    >
+                      {t('Sasisha Hali', 'Update Status')}
+                    </button>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+
+          <div className="hidden md:block data-table-wrap">
             <table className="data-table">
               <thead>
                 <tr>
@@ -262,12 +352,32 @@ export default function Transport() {
       </div>
 
       {/* Transport Runs & Ledger */}
-      <div className="panel p-0 overflow-hidden">
+      <div className={`panel p-0 overflow-hidden ${tab !== 'costs' ? 'hidden md:flex' : ''}`}>
         <div className="p-4 bg-slate-50 border-b border-slate-200">
           <h3 className="text-sm font-bold text-slate-900 m-0">{t('Daftari la Gharama za Safari', 'Transport Trip Cost Journal')}</h3>
           <p className="text-xs text-slate-500 m-0">{t('Gharama za usafiri zinazoingia kwenye hesabu ya gharama ya mzigo', 'Freight expenses apportioned into landed cost calculation per batch')}</p>
         </div>
-        <div className="data-table-wrap border-0 rounded-none">
+
+        {/* Mobile Trip Costs Cards (< md) */}
+        <div className="md:hidden p-3 flex flex-col gap-2.5 bg-slate-50/50">
+          {trips.map(tr => (
+            <div key={tr.id} className="mobile-card flex flex-col gap-2" onClick={() => setViewTrip(tr)}>
+              <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0">
+                  <b className="text-sm text-slate-900 block truncate">{tr.from} → {tr.to}</b>
+                  <span className="text-[11px] font-mono text-slate-500">{refLabel(s, tr)} · {tr.veh || 'Fleet Truck'}</span>
+                </div>
+                <b className="font-mono text-sm text-slate-900 shrink-0 tabular-nums">{tzs(tr.cost)}</b>
+              </div>
+              <div className="flex items-center justify-between text-xs pt-1 border-t border-slate-100">
+                <Badge variant="blue">{tr.type}</Badge>
+                <span className="font-mono text-[11px] text-slate-500">{fmtT(atOf(tr))}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div className="hidden md:block data-table-wrap border-0 rounded-none">
           <table className="data-table">
             <thead>
               <tr>
@@ -416,7 +526,7 @@ export default function Transport() {
               />
             </Field>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <Field label={t('Joto Safarini', 'Transit Temperature')}>
                 <input
                   type="text"
@@ -457,7 +567,7 @@ export default function Transport() {
           onClose={() => setCostModal(false)}
         >
           <div className="flex flex-col gap-4">
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <Field label={t('Aina ya Safari', 'Trip Category')}>
                 <select
                   value={costForm.type}
@@ -483,7 +593,7 @@ export default function Transport() {
               </Field>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <Field label={t('Mzigo / Oda Husika', 'Batch / Sale Reference')}>
                 <select
                   value={costForm.ref}
@@ -529,7 +639,7 @@ export default function Transport() {
               </Field>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <Field label={t('Mahali pa Kuanzia', 'Origin Location')}>
                 <input
                   type="text"
@@ -548,7 +658,7 @@ export default function Transport() {
               </Field>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <Field label={t('Namba ya Gari / Boti', 'Vehicle / Boat Reg')}>
                 <input
                   type="text"
@@ -569,7 +679,7 @@ export default function Transport() {
               </Field>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <Field label={t('Uzito / Kiasi (Kg)', 'Quantity / Weight (Kg)')}>
                 <input
                   type="number"
@@ -600,7 +710,7 @@ export default function Transport() {
               </Field>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <Field label={t('Gharama ya Safari (TZS)', 'Trip Expense Amount (TZS)')}>
                 <input
                   type="number"

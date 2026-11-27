@@ -11,10 +11,13 @@ import {
   Info
 } from 'lucide-react'
 import { useS } from '../store'
+import { useDevice } from '../device'
 import { Modal, Field, Badge, FishPhoto, DetailModal, ViewBtn, f, fmtT } from '../ui'
 
 export default function Quality() {
   const { s, a, me, t, spLabel } = useS()
+  const { lowBandwidthMode } = useDevice()
+  const [mTab, setMTab] = useState('pending')
   const [b, setB] = useState(null)
   const [viewQc, setViewQc] = useState(null)
   const [d, setD] = useState({
@@ -62,26 +65,30 @@ export default function Quality() {
         </div>
       </div>
 
-      {/* Visual Quality Lab Header */}
+      {/* Visual Quality Lab Header (compact on mobile / hidden photo on slow network) */}
       <div className="panel p-0 overflow-hidden flex flex-col md:flex-row items-center border border-slate-200">
-        <div className="w-full md:w-56 h-28 shrink-0 bg-slate-900 relative">
-          <img
-            src="/photos/quality-inspection.png"
-            alt="Factory Quality Inspection"
-            className="w-full h-full object-cover"
-          />
-          <span className="absolute bottom-1.5 left-1.5 bg-slate-950/80 text-blue-300 text-[10px] font-mono px-1.5 py-0.5 rounded font-bold backdrop-blur-sm">
-            {t('MAABARA YA UBORA', 'HACCP LAB')}
-          </span>
-        </div>
-        <div className="p-3.5 flex-1 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        {!lowBandwidthMode && (
+          <div className="hidden md:block w-full md:w-56 h-28 shrink-0 bg-slate-900 relative">
+            <img
+              src="/photos/quality-inspection.png"
+              alt="Factory Quality Inspection"
+              loading="lazy"
+              decoding="async"
+              className="w-full h-full object-cover"
+            />
+            <span className="absolute bottom-1.5 left-1.5 bg-slate-950/80 text-blue-300 text-[10px] font-mono px-1.5 py-0.5 rounded font-bold backdrop-blur-sm">
+              {t('MAABARA YA UBORA', 'HACCP LAB')}
+            </span>
+          </div>
+        )}
+        <div className="p-3.5 flex-1 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
           <div>
             <h3 className="text-sm font-bold text-slate-900 m-0">{t('Itifaki za Ukaguzi wa Ubora na Joto', 'Sensory & Temperature Inspection Protocols')}</h3>
             <p className="text-xs text-slate-500 m-0 mt-0.5">
               {t('Hakiki rangi ya matamvua, uimara wa nyama, macho safi, harufu nzuri, na joto ≤ 4.0°C.', 'Verify gill color (bright red), firm elasticity, clear eyes, fresh cucumber odor, and core temperature ≤ 4.0°C.')}
             </p>
           </div>
-          <span className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-blue-50 text-blue-800 border border-blue-200 flex items-center gap-1.5 whitespace-nowrap shrink-0">
+          <span className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-blue-50 text-blue-800 border border-blue-200 inline-flex items-center gap-1.5 whitespace-nowrap self-start sm:self-auto shrink-0">
             <ShieldCheck size={14} className="text-blue-600" /> {t('Madaraja ya FiRCIS', 'FiRCIS Grade Classification')}
           </span>
         </div>
@@ -134,21 +141,47 @@ export default function Quality() {
         </div>
       </div>
 
+      {/* Mobile Pill Tab Switcher */}
+      <div className="flex md:hidden items-center gap-2 bg-slate-200/80 p-1 rounded-xl">
+        <button
+          type="button"
+          onClick={() => setMTab('pending')}
+          className={`flex-1 min-h-[40px] px-3 py-1.5 rounded-lg text-xs font-bold transition ${
+            mTab === 'pending' ? 'bg-[#052d56] text-white shadow-sm' : 'text-slate-600'
+          }`}
+        >
+          {t('Inasubiri', 'Pending')} ({pend.length})
+        </button>
+        <button
+          type="button"
+          onClick={() => setMTab('inspected')}
+          className={`flex-1 min-h-[40px] px-3 py-1.5 rounded-lg text-xs font-bold transition ${
+            mTab === 'inspected' ? 'bg-[#052d56] text-white shadow-sm' : 'text-slate-600'
+          }`}
+        >
+          {t('Imekaguliwa', 'Inspected')} ({done.length})
+        </button>
+      </div>
+
       {/* Authentic Food Safety & Inspection Lab Card */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Inspection Protocols Guide with Real Image */}
-        <div className="panel lg:col-span-1 p-0 overflow-hidden">
-          <div className="relative h-44 bg-slate-900">
-            <img
-              src="/assets/aistudio/image_da307d78.png"
-              alt="Quality Inspectors checking fresh fish"
-              className="w-full h-full object-cover opacity-60"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-900/40 to-transparent p-4 flex flex-col justify-end">
-              <span className="text-[11px] font-mono text-emerald-400 uppercase tracking-wider">HACCP &amp; FiRCIS Inspection</span>
-              <h4 className="text-base font-bold text-white m-0">Freshness Verification Lab</h4>
+        {/* Inspection Protocols Guide with Real Image (desktop) */}
+        <div className="hidden lg:flex panel lg:col-span-1 p-0 overflow-hidden">
+          {!lowBandwidthMode && (
+            <div className="relative h-44 bg-slate-900">
+              <img
+                src="/assets/aistudio/image_da307d78.png"
+                alt="Quality Inspectors checking fresh fish"
+                loading="lazy"
+                decoding="async"
+                className="w-full h-full object-cover opacity-60"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-900/40 to-transparent p-4 flex flex-col justify-end">
+                <span className="text-[11px] font-mono text-emerald-400 uppercase tracking-wider">HACCP &amp; FiRCIS Inspection</span>
+                <h4 className="text-base font-bold text-white m-0">Freshness Verification Lab</h4>
+              </div>
             </div>
-          </div>
+          )}
           <div className="p-4 flex flex-col gap-3 text-xs text-slate-600">
             <div className="flex items-start gap-2">
               <CheckCircle2 size={16} className="text-emerald-600 shrink-0 mt-0.5" />
@@ -170,7 +203,7 @@ export default function Quality() {
         </div>
 
         {/* Batches Awaiting Inspection */}
-        <div className="panel lg:col-span-2">
+        <div className={`panel lg:col-span-2 ${mTab !== 'pending' ? 'hidden md:flex' : ''}`}>
           <div className="panel-header">
             <div>
               <h3>{t('Mizigo Inayosubiri Ukaguzi wa Ubora', 'Arrival Batches Awaiting Quality Sign-Off')}</h3>
@@ -188,78 +221,163 @@ export default function Quality() {
               <p className="text-xs text-slate-500 m-0">{t('Hakuna mzigo unaosubiri ukaguzi kwa sasa.', 'No incoming fish batches waiting for inspection.')}</p>
             </div>
           ) : (
-            <div className="data-table-wrap">
-              <table className="data-table">
-                <thead>
-                  <tr>
-                    <th>{t('Namba ya Mzigo', 'Batch Lot')}</th>
-                    <th>{t('Samaki & Daraja', 'Fish & Grade')}</th>
-                    <th>{t('Mvuvi / Mwalo', 'Supplier / Landing')}</th>
-                    <th>{t('Uzito Uliofika', 'Arrived Weight')}</th>
-                    <th className="text-right">{t('Kitendo', 'Action')}</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {pend.map(x => {
-                    const supObj = s.suppliers.find(y => y.id === x.sup)
-                    return (
-                      <tr key={x.id}>
-                        <td>
-                          <b className="font-mono text-blue-700">{x.no}</b>
-                          <small className="block font-mono text-slate-400">{x.pur}</small>
-                        </td>
-                        <td>
-                          <div className="flex items-center gap-2">
-                            <FishPhoto sp={x.sp} size={32} />
-                            <div>
-                              <b className="text-slate-900 block">{spLabel(x.sp)}</b>
-                              <small className="text-slate-500">{t('Daraja', 'Grade')} {x.grade}</small>
+            <>
+              {/* Mobile Cards (< md) */}
+              <div className="md:hidden flex flex-col gap-2.5">
+                {pend.map(x => {
+                  const supObj = s.suppliers.find(y => y.id === x.sup)
+                  return (
+                    <div key={x.id} className="mobile-card flex flex-col gap-3">
+                      <div className="flex items-start justify-between gap-2.5">
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <FishPhoto sp={x.sp} size={42} />
+                          <div className="min-w-0">
+                            <b className="text-sm text-slate-900 block truncate">{spLabel(x.sp)} · {t('Daraja', 'Gr')} {x.grade}</b>
+                            <span className="text-[11px] font-mono text-blue-700 font-semibold">{x.no} · {x.pur}</span>
+                          </div>
+                        </div>
+                        <Badge variant="amber">{f(x.kg)} kg</Badge>
+                      </div>
+                      <div className="flex items-center justify-between text-xs text-slate-500 border-t border-slate-100 pt-2">
+                        <span className="truncate">{supObj?.name || x.sup}</span>
+                        <span className="font-medium text-slate-700 shrink-0">{x.site}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <ViewBtn onClick={() => setViewQc(x)} />
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setB(x)
+                            setD({
+                              acc: String(x.kg),
+                              temp: '2.1',
+                              reason: 'High core temperature',
+                              checklist: { eyes: true, gills: true, flesh: true, smell: true }
+                            })
+                          }}
+                          className="btn-primary flex-1 bg-[#18b8b2] hover:bg-[#139c97] text-xs"
+                        >
+                          <ShieldCheck size={15} /> {t('Kagua & Idhinisha', 'Inspect & Grade')}
+                        </button>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+
+              {/* Desktop Table */}
+              <div className="hidden md:block data-table-wrap">
+                <table className="data-table">
+                  <thead>
+                    <tr>
+                      <th>{t('Namba ya Mzigo', 'Batch Lot')}</th>
+                      <th>{t('Samaki & Daraja', 'Fish & Grade')}</th>
+                      <th>{t('Mvuvi / Mwalo', 'Supplier / Landing')}</th>
+                      <th>{t('Uzito Uliofika', 'Arrived Weight')}</th>
+                      <th className="text-right">{t('Kitendo', 'Action')}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {pend.map(x => {
+                      const supObj = s.suppliers.find(y => y.id === x.sup)
+                      return (
+                        <tr key={x.id}>
+                          <td>
+                            <b className="font-mono text-blue-700">{x.no}</b>
+                            <small className="block font-mono text-slate-400">{x.pur}</small>
+                          </td>
+                          <td>
+                            <div className="flex items-center gap-2">
+                              <FishPhoto sp={x.sp} size={32} />
+                              <div>
+                                <b className="text-slate-900 block">{spLabel(x.sp)}</b>
+                                <small className="text-slate-500">{t('Daraja', 'Grade')} {x.grade}</small>
+                              </div>
                             </div>
-                          </div>
-                        </td>
-                        <td>
-                          <span className="text-slate-800 font-medium block">{supObj?.name || x.sup}</span>
-                          <small className="text-slate-400">{x.site}</small>
-                        </td>
-                        <td>
-                          <b className="font-mono text-slate-900">{f(x.kg)} kg</b>
-                        </td>
-                        <td className="text-right">
-                          <div className="flex items-center justify-end gap-1.5">
-                            <ViewBtn onClick={() => setViewQc(x)} />
-                            <button
-                              onClick={() => {
-                                setB(x)
-                                setD({
-                                  acc: String(x.kg),
-                                  temp: '2.1',
-                                  reason: 'High core temperature',
-                                  checklist: { eyes: true, gills: true, flesh: true, smell: true }
-                                })
-                              }}
-                              className="btn-primary text-xs bg-emerald-600 hover:bg-emerald-700"
-                            >
-                              <ShieldCheck size={14} /> {t('Kagua & Idhinisha', 'Inspect & Grade')}
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    )
-                  })}
-                </tbody>
-              </table>
-            </div>
+                          </td>
+                          <td>
+                            <span className="text-slate-800 font-medium block">{supObj?.name || x.sup}</span>
+                            <small className="text-slate-400">{x.site}</small>
+                          </td>
+                          <td>
+                            <b className="font-mono text-slate-900">{f(x.kg)} kg</b>
+                          </td>
+                          <td className="text-right">
+                            <div className="flex items-center justify-end gap-1.5">
+                              <ViewBtn onClick={() => setViewQc(x)} />
+                              <button
+                                onClick={() => {
+                                  setB(x)
+                                  setD({
+                                    acc: String(x.kg),
+                                    temp: '2.1',
+                                    reason: 'High core temperature',
+                                    checklist: { eyes: true, gills: true, flesh: true, smell: true }
+                                  })
+                                }}
+                                className="btn-primary text-xs bg-emerald-600 hover:bg-emerald-700"
+                              >
+                                <ShieldCheck size={14} /> {t('Kagua & Idhinisha', 'Inspect & Grade')}
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </>
           )}
         </div>
       </div>
 
       {/* Inspection History Log */}
-      <div className="panel p-0 overflow-hidden">
+      <div className={`panel p-0 overflow-hidden ${mTab !== 'inspected' ? 'hidden md:flex' : ''}`}>
         <div className="p-4 bg-slate-50 border-b border-slate-200">
           <h3 className="text-sm font-bold text-slate-900 m-0">{t('Daftari la Ukaguzi & Vyeti vya Ubora', 'Inspection Log & Quality Certifications')}</h3>
           <p className="text-xs text-slate-500 m-0">{t('Kumbukumbu za mizigo iliyoidhinishwa kwa ajili ya viwanda', 'Verified audit records of fish lots approved for industrial processing')}</p>
         </div>
-        <div className="data-table-wrap border-0 rounded-none">
+
+        {/* Mobile Cards (< md) */}
+        <div className="md:hidden p-3 flex flex-col gap-2.5 bg-slate-50/50">
+          {done.map(x => {
+            const supObj = s.suppliers.find(y => y.id === x.sup)
+            return (
+              <div key={x.id} className="mobile-card flex flex-col gap-2.5" onClick={() => setViewQc(x)}>
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <FishPhoto sp={x.sp} size={38} />
+                    <div className="min-w-0">
+                      <b className="text-sm text-slate-900 block truncate">{spLabel(x.sp)} ({x.grade})</b>
+                      <span className="text-[11px] font-mono text-slate-500">{x.no} · {supObj?.name || x.sup}</span>
+                    </div>
+                  </div>
+                  <Badge variant={x.st === 'accepted' ? 'green' : 'red'}>
+                    {x.st === 'accepted' ? t('Amethibitishwa', 'Certified') : t('Amekataliwa', 'Rejected')}
+                  </Badge>
+                </div>
+                <div className="grid grid-cols-3 gap-2 text-xs bg-slate-50 rounded-xl p-2 border border-slate-100">
+                  <div>
+                    <span className="text-[10px] text-slate-400 block">{t('Joto', 'Temp')}</span>
+                    <b className="font-mono text-emerald-700">{x.temp ? `${x.temp}°C` : '2.1°C'}</b>
+                  </div>
+                  <div>
+                    <span className="text-[10px] text-slate-400 block">{t('Kubaliwa', 'Accepted')}</span>
+                    <b className="font-mono text-slate-900">{f(x.kg - (x.rej || 0))} kg</b>
+                  </div>
+                  <div>
+                    <span className="text-[10px] text-slate-400 block">{t('Kataliwa', 'Rejected')}</span>
+                    <b className={`font-mono ${x.rej > 0 ? 'text-rose-600' : 'text-slate-400'}`}>{f(x.rej || 0)} kg</b>
+                  </div>
+                </div>
+              </div>
+            )
+          })}
+        </div>
+
+        {/* Desktop Table */}
+        <div className="hidden md:block data-table-wrap border-0 rounded-none">
           <table className="data-table">
             <thead>
               <tr>
@@ -368,7 +486,7 @@ export default function Quality() {
               <span className="font-bold text-slate-900 uppercase tracking-wide">
                 {t('Orodha ya Ukaguzi wa Ubora (HACCP):', 'Organoleptic Quality Checklist (HACCP):')}
               </span>
-              <div className="grid grid-cols-2 gap-2 text-slate-700">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-slate-700">
                 <label className="flex items-center gap-2 cursor-pointer">
                   <input
                     type="checkbox"
@@ -404,7 +522,7 @@ export default function Quality() {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <Field label={t('Joto la Kupokelea (°C)', 'Reception Temp (°C)')} hint={t('Lengo: 0°C hadi 4°C', 'Target: 0°C to 4°C')}>
                 <input
                   type="number"

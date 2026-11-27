@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import {
   DollarSign,
   CreditCard,
@@ -14,6 +14,7 @@ import { Modal, Field, Badge, ReceiptModal, DetailModal, ViewBtn, f, tzs, fmtT }
 
 export default function Payments() {
   const { s, a, t } = useS()
+  const [mTab, setMTab] = useState('balances')
   const [payTarget, setPayTarget] = useState(null)
   const [viewSupBal, setViewSupBal] = useState(null)
   const [viewPay, setViewPay] = useState(null)
@@ -24,6 +25,20 @@ export default function Payments() {
 
   const totalOwed = s.suppliers.reduce((t, y) => t + supBal(s, y.id), 0)
   const totalPaid = s.pays.reduce((t, p) => t + p.amt, 0)
+
+  useEffect(() => {
+    const onQuickAdd = e => {
+      if (e.detail?.tab !== 'payments') return
+      const firstUnpaid = s.suppliers.find(y => supBal(s, y.id) > 0) || s.suppliers[0]
+      if (firstUnpaid) {
+        const bal = Math.max(0, supBal(s, firstUnpaid.id))
+        setPayTarget(firstUnpaid)
+        setAmt(String(bal))
+      }
+    }
+    window.addEventListener('aquacatch:quick-add', onQuickAdd)
+    return () => window.removeEventListener('aquacatch:quick-add', onQuickAdd)
+  }, [s])
 
   const handlePay = () => {
     if (!payTarget) return
@@ -84,8 +99,30 @@ export default function Payments() {
         </div>
       </div>
 
+      {/* Mobile Pill Tab Switcher */}
+      <div className="flex md:hidden items-center gap-2 bg-slate-200/80 p-1 rounded-xl">
+        <button
+          type="button"
+          onClick={() => setMTab('balances')}
+          className={`flex-1 min-h-[40px] px-3 py-1.5 rounded-lg text-xs font-bold transition ${
+            mTab === 'balances' ? 'bg-[#052d56] text-white shadow-sm' : 'text-slate-600'
+          }`}
+        >
+          {t('Salio la Wavuvi', 'Balances')} ({suppliers.length})
+        </button>
+        <button
+          type="button"
+          onClick={() => setMTab('history')}
+          className={`flex-1 min-h-[40px] px-3 py-1.5 rounded-lg text-xs font-bold transition ${
+            mTab === 'history' ? 'bg-[#052d56] text-white shadow-sm' : 'text-slate-600'
+          }`}
+        >
+          {t('Historia ya Malipo', 'History')} ({s.pays.length})
+        </button>
+      </div>
+
       {/* Supplier Balances Table */}
-      <div className="panel p-0 overflow-hidden">
+      <div className={`panel p-0 overflow-hidden ${mTab !== 'balances' ? 'hidden md:flex' : ''}`}>
         <div className="p-4 bg-slate-50 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
             <h3 className="text-sm font-bold text-slate-900 m-0">{t('Salio la Akaunti za Wavuvi', 'Fishermen Account Balances')}</h3>
@@ -102,7 +139,59 @@ export default function Payments() {
             />
           </div>
         </div>
-        <div className="data-table-wrap border-0 rounded-none">
+
+        {/* Mobile Balances Cards (< md) */}
+        <div className="md:hidden p-3 flex flex-col gap-2.5 bg-slate-50/50">
+          {suppliers.map(y => {
+            const bal = supBal(s, y.id)
+            const rows = supPurchaseStatus(s, y.id)
+            const nUnpaid = rows.filter(r => r.status === 'unpaid').length
+            return (
+              <div key={y.id} className="mobile-card flex flex-col gap-2.5">
+                <div className="flex items-start justify-between gap-2.5">
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <div className="w-10 h-10 rounded-full bg-blue-50 border border-blue-200 text-blue-800 font-bold text-sm flex items-center justify-center shrink-0">
+                      {y.name.slice(0, 1).toUpperCase()}
+                    </div>
+                    <div className="min-w-0">
+                      <b className="text-sm text-slate-900 block truncate">{y.name}</b>
+                      <span className="text-[11px] text-slate-500 block truncate">{y.site} · {y.phone}</span>
+                    </div>
+                  </div>
+                  <div className="text-right shrink-0">
+                    <b className={`font-mono text-sm block tabular-nums ${bal > 0 ? 'text-rose-600' : 'text-emerald-700'}`}>
+                      {tzs(bal)}
+                    </b>
+                    <span className="text-[10px] text-slate-400">
+                      {rows.length} {t('risiti', 'lots')}{nUnpaid > 0 ? ` · ${nUnpaid} ${t('bado', 'due')}` : ''}
+                    </span>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 pt-1 border-t border-slate-100">
+                  <ViewBtn onClick={() => setViewSupBal(y)} />
+                  {bal > 0 ? (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setPayTarget(y)
+                        setAmt(String(bal))
+                      }}
+                      className="btn-primary flex-1 text-xs bg-[#18b8b2] hover:bg-[#139c97]"
+                    >
+                      <CreditCard size={14} /> {t('Lipa Deni', 'Disburse Payment')}
+                    </button>
+                  ) : (
+                    <span className="ml-auto text-xs font-bold text-emerald-700 px-2.5 py-1 rounded-lg bg-emerald-50 border border-emerald-200">
+                      {t('Amelipwa', 'Settled')}
+                    </span>
+                  )}
+                </div>
+              </div>
+            )
+          })}
+        </div>
+
+        <div className="hidden md:block data-table-wrap border-0 rounded-none">
           <table className="data-table">
             <thead>
               <tr>
@@ -170,12 +259,38 @@ export default function Payments() {
       </div>
 
       {/* Payment History */}
-      <div className="panel p-0 overflow-hidden">
+      <div className={`panel p-0 overflow-hidden ${mTab !== 'history' ? 'hidden md:flex' : ''}`}>
         <div className="p-4 bg-slate-50 border-b border-slate-200">
           <h3 className="text-sm font-bold text-slate-900 m-0">{t('Malipo Yaliyofanyika Hivi Karibuni', 'Recent Payment Disbursements')}</h3>
           <p className="text-xs text-slate-500 m-0">{t('Risiti za malipo kupitia simu na benki', 'Vouchers paid via mobile money and bank')}</p>
         </div>
-        <div className="data-table-wrap border-0 rounded-none">
+
+        {/* Mobile History Cards (< md) */}
+        <div className="md:hidden p-3 flex flex-col gap-2.5 bg-slate-50/50">
+          {[...s.pays].reverse().slice(0, 15).map((p, idx) => {
+            const supObj = s.suppliers.find(y => y.id === p.sup)
+            const refCode = p.ref || `PAY-00${idx + 1}`
+            return (
+              <div
+                key={p.id || idx}
+                className="mobile-card flex items-center justify-between gap-2.5"
+                onClick={() => setViewPay({ ...p, ref: refCode, supName: supObj?.name || 'Fisherman' })}
+              >
+                <div className="min-w-0">
+                  <b className="text-sm text-slate-900 block truncate">{supObj?.name || 'Fisherman'}</b>
+                  <span className="text-[11px] font-mono text-blue-700 block">{refCode} · {p.date}</span>
+                  <span className="text-[11px] text-slate-500">{p.m}</span>
+                </div>
+                <div className="text-right shrink-0">
+                  <b className="font-mono text-sm text-emerald-700 block tabular-nums">{tzs(p.amt)}</b>
+                  <Badge variant="green">{t('Imelipwa', 'Paid')}</Badge>
+                </div>
+              </div>
+            )
+          })}
+        </div>
+
+        <div className="hidden md:block data-table-wrap border-0 rounded-none">
           <table className="data-table">
             <thead>
               <tr>

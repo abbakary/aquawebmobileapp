@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import {
   Users,
   UserPlus,
@@ -74,6 +74,25 @@ export default function Staff() {
   const [viewEmp, setViewEmp] = useState(null)
 
   const assignable = Object.keys(ROLES).filter(r => owner || (r !== 'Owner' && r !== 'General Manager'))
+
+  useEffect(() => {
+    const onQuickAdd = e => {
+      if (e.detail?.tab === 'staff') {
+        setEmpModal({
+          name: '',
+          phone: '',
+          username: '',
+          role: assignable.find(r => r === 'Purchasing Officer') || assignable[0],
+          salary: '950000',
+          pin: '',
+          active: true,
+          branch: 'all'
+        })
+      }
+    }
+    window.addEventListener('aquacatch:quick-add', onQuickAdd)
+    return () => window.removeEventListener('aquacatch:quick-add', onQuickAdd)
+  }, [assignable])
   const canEdit = u => owner || (u.role !== 'Owner' && u.role !== 'General Manager')
   const isNew = empModal && !empModal.id
   const ownersCount = s.staff.filter(x => x.role === 'Owner' && x.active).length
@@ -209,7 +228,39 @@ export default function Staff() {
           </p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
+        {/* Mobile Payroll Quick Actions (Add Employee lives in mobile top bar +) */}
+        {canManage && (
+          <div className="md:hidden grid grid-cols-2 gap-2">
+            <button
+              type="button"
+              onClick={() => setBatchModal(true)}
+              className="btn-secondary text-xs justify-center"
+            >
+              <Send size={15} /> {t('Lipa Wote', 'Run Payroll')}
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                const first = s.staff[0]
+                setPayForm({
+                  staffId: first?.id || '',
+                  type: 'Mshahara',
+                  month: currentMonth,
+                  gross: String(first?.salary || 950000),
+                  deduction: '0',
+                  method: 'M-Pesa',
+                  note: ''
+                })
+                setPayModal(true)
+              }}
+              className="btn-primary text-xs bg-emerald-600 hover:bg-emerald-700 justify-center"
+            >
+              <DollarSign size={15} /> {t('Lipa Mfanyakazi', 'Pay Employee')}
+            </button>
+          </div>
+        )}
+
+        <div className="hidden md:flex flex-wrap items-center gap-2">
           {canManage && (
             <>
               <button
@@ -310,7 +361,7 @@ export default function Staff() {
 
       {/* Navigation Tabs + Search */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-2 rounded-xl border border-slate-200 shadow-sm">
-        <div className="flex items-center gap-1 overflow-x-auto">
+        <div className="flex items-center gap-1 overflow-x-auto no-scrollbar">
           <button
             type="button"
             onClick={() => setTab('staff')}
@@ -356,112 +407,194 @@ export default function Staff() {
 
       {/* TAB 1: EMPLOYEES & SALARIES */}
       {tab === 'staff' && (
-        <div className="data-table-wrap">
-          <table className="data-table">
-            <thead>
-              <tr>
-                <th>{t('Mfanyakazi', 'Employee')}</th>
-                <th>{t('Wadhifa', 'Role')}</th>
-                <th>{t('Tawi', 'Branch')}</th>
-                <th>{t('Mshahara / Mwezi', 'Monthly Salary')}</th>
-                <th>{t('Hali', 'Status')}</th>
-                <th className="text-right">{t('Vitendo', 'Actions')}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredStaff.map(u => {
-                const branchName =
-                  u.branch && u.branch !== 'all'
-                    ? T.branches.find(b => b.id === u.branch)?.name || u.branch
-                    : t('Matawi Yote (Makao Makuu)', 'All Branches (HQ)')
-                return (
-                  <tr key={u.id}>
-                    <td>
-                      <div className="flex items-center gap-2.5">
-                        <div className="w-9 h-9 rounded-full bg-blue-900 text-white font-bold text-xs flex items-center justify-center shrink-0">
-                          {u.name
-                            .split(' ')
-                            .slice(0, 2)
-                            .map(w => w[0])
-                            .join('')
-                            .toUpperCase()}
-                        </div>
-                        <div>
-                          <b className="text-slate-900 block">
-                            {u.name} {u.id === me?.id && <span className="text-blue-700 text-xs">{t('(Wewe)', '(You)')}</span>}
-                          </b>
-                          <small className="text-slate-500 font-mono">
-                            @{u.username} · {u.phone || '0754 000 111'}
-                          </small>
-                        </div>
+        <>
+          {/* Mobile Employee Cards */}
+          <div className="md:hidden flex flex-col gap-2.5">
+            {filteredStaff.map(u => {
+              const branchName =
+                u.branch && u.branch !== 'all'
+                  ? T.branches.find(b => b.id === u.branch)?.name || u.branch
+                  : t('Matawi Yote (Makao Makuu)', 'All Branches (HQ)')
+              return (
+                <div key={u.id} className="mobile-card flex flex-col gap-2.5">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <div className="w-10 h-10 rounded-full bg-[#052d56] text-white font-bold text-xs flex items-center justify-center shrink-0">
+                        {u.name
+                          .split(' ')
+                          .slice(0, 2)
+                          .map(w => w[0])
+                          .join('')
+                          .toUpperCase()}
                       </div>
-                    </td>
-                    <td>
+                      <div className="min-w-0">
+                        <b className="text-sm text-slate-900 block truncate">
+                          {u.name} {u.id === me?.id && <span className="text-blue-700 text-xs">{t('(Wewe)', '(You)')}</span>}
+                        </b>
+                        <span className="text-[11px] text-slate-500 font-mono block truncate">
+                          @{u.username} · {u.phone || '0754 000 111'}
+                        </span>
+                      </div>
+                    </div>
+                    <Badge variant={u.active ? 'green' : 'red'}>
+                      {u.active ? t('Hai', 'Active') : t('Amezimwa', 'Disabled')}
+                    </Badge>
+                  </div>
+
+                  <div className="flex items-center justify-between gap-2 pt-2 border-t border-slate-100 text-xs">
+                    <div className="min-w-0">
                       <Badge variant={u.role === 'Owner' ? 'blue' : u.role === 'General Manager' ? 'green' : 'neutral'}>
                         {u.role}
                       </Badge>
-                    </td>
-                    <td>
-                      <span className="text-xs text-slate-700 flex items-center gap-1">
-                        <Building2 size={13} className="text-slate-400" /> {branchName}
-                      </span>
-                    </td>
-                    <td>
-                      <b className="font-mono text-slate-900">{tzs(u.salary || 0)}</b>
-                    </td>
-                    <td>
-                      <Badge variant={u.active ? 'green' : 'red'}>
-                        {u.active ? t('Hai', 'Active') : t('Amezimwa', 'Disabled')}
-                      </Badge>
-                    </td>
-                    <td className="text-right">
-                      <div className="flex items-center justify-end gap-1.5">
-                        <ViewBtn onClick={() => setViewEmp({ ...u, branchName })} />
-                        {canManage && u.active && (
-                          <button
-                            type="button"
-                            onClick={() => openPayForEmployee(u)}
-                            className="btn-primary text-xs py-1 px-2.5 bg-emerald-600 hover:bg-emerald-700"
-                          >
-                            <DollarSign size={13} /> {t('Lipa', 'Pay')}
-                          </button>
-                        )}
-                        {canEdit(u) && (
-                          <button
-                            type="button"
-                            onClick={() =>
-                              setEmpModal({
-                                ...u,
-                                salary: String(u.salary || 950000),
-                                was: u.role,
-                                pin: ''
-                              })
-                            }
-                            className="btn-secondary text-xs py-1 px-2.5"
-                          >
-                            <Edit3 size={13} /> {t('Hariri', 'Edit')}
-                          </button>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                )
-              })}
-            </tbody>
-          </table>
-        </div>
+                      <span className="block text-[11px] text-slate-500 mt-1 truncate">{branchName}</span>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <small className="block text-[10px] text-slate-400 uppercase font-bold">{t('Mshahara', 'Salary')}</small>
+                      <b className="font-mono text-sm text-slate-900">{tzs(u.salary || 0)}</b>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-end gap-1.5 pt-2 border-t border-slate-100">
+                    <ViewBtn onClick={() => setViewEmp({ ...u, branchName })} />
+                    {canManage && u.active && (
+                      <button
+                        type="button"
+                        onClick={() => openPayForEmployee(u)}
+                        className="btn-primary text-xs py-1.5 px-3 bg-emerald-600 hover:bg-emerald-700"
+                      >
+                        <DollarSign size={13} /> {t('Lipa', 'Pay')}
+                      </button>
+                    )}
+                    {canEdit(u) && (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setEmpModal({
+                            ...u,
+                            salary: String(u.salary || 950000),
+                            was: u.role,
+                            pin: ''
+                          })
+                        }
+                        className="btn-secondary text-xs py-1.5 px-3"
+                      >
+                        <Edit3 size={13} /> {t('Hariri', 'Edit')}
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+
+          {/* Desktop Employee Table */}
+          <div className="hidden md:block data-table-wrap">
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th>{t('Mfanyakazi', 'Employee')}</th>
+                  <th>{t('Wadhifa', 'Role')}</th>
+                  <th>{t('Tawi', 'Branch')}</th>
+                  <th>{t('Mshahara / Mwezi', 'Monthly Salary')}</th>
+                  <th>{t('Hali', 'Status')}</th>
+                  <th className="text-right">{t('Vitendo', 'Actions')}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredStaff.map(u => {
+                  const branchName =
+                    u.branch && u.branch !== 'all'
+                      ? T.branches.find(b => b.id === u.branch)?.name || u.branch
+                      : t('Matawi Yote (Makao Makuu)', 'All Branches (HQ)')
+                  return (
+                    <tr key={u.id}>
+                      <td>
+                        <div className="flex items-center gap-2.5">
+                          <div className="w-9 h-9 rounded-full bg-blue-900 text-white font-bold text-xs flex items-center justify-center shrink-0">
+                            {u.name
+                              .split(' ')
+                              .slice(0, 2)
+                              .map(w => w[0])
+                              .join('')
+                              .toUpperCase()}
+                          </div>
+                          <div>
+                            <b className="text-slate-900 block">
+                              {u.name} {u.id === me?.id && <span className="text-blue-700 text-xs">{t('(Wewe)', '(You)')}</span>}
+                            </b>
+                            <small className="text-slate-500 font-mono">
+                              @{u.username} · {u.phone || '0754 000 111'}
+                            </small>
+                          </div>
+                        </div>
+                      </td>
+                      <td>
+                        <Badge variant={u.role === 'Owner' ? 'blue' : u.role === 'General Manager' ? 'green' : 'neutral'}>
+                          {u.role}
+                        </Badge>
+                      </td>
+                      <td>
+                        <span className="text-xs text-slate-700 flex items-center gap-1">
+                          <Building2 size={13} className="text-slate-400" /> {branchName}
+                        </span>
+                      </td>
+                      <td>
+                        <b className="font-mono text-slate-900">{tzs(u.salary || 0)}</b>
+                      </td>
+                      <td>
+                        <Badge variant={u.active ? 'green' : 'red'}>
+                          {u.active ? t('Hai', 'Active') : t('Amezimwa', 'Disabled')}
+                        </Badge>
+                      </td>
+                      <td className="text-right">
+                        <div className="flex items-center justify-end gap-1.5">
+                          <ViewBtn onClick={() => setViewEmp({ ...u, branchName })} />
+                          {canManage && u.active && (
+                            <button
+                              type="button"
+                              onClick={() => openPayForEmployee(u)}
+                              className="btn-primary text-xs py-1 px-2.5 bg-emerald-600 hover:bg-emerald-700"
+                            >
+                              <DollarSign size={13} /> {t('Lipa', 'Pay')}
+                            </button>
+                          )}
+                          {canEdit(u) && (
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setEmpModal({
+                                  ...u,
+                                  salary: String(u.salary || 950000),
+                                  was: u.role,
+                                  pin: ''
+                                })
+                              }
+                              className="btn-secondary text-xs py-1 px-2.5"
+                            >
+                              <Edit3 size={13} /> {t('Hariri', 'Edit')}
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+        </>
       )}
 
       {/* TAB 2: PAYROLL & PAYMENTS LEDGER */}
       {tab === 'payroll' && (
         <div className="flex flex-col gap-3">
-          <div className="flex items-center gap-1.5 overflow-x-auto">
+          <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar">
             {['All', 'Mshahara', 'Posho', 'Advance'].map(tp => (
               <button
                 key={tp}
                 type="button"
                 onClick={() => setPayFilter(tp)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition ${
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold border whitespace-nowrap transition ${
                   payFilter === tp
                     ? 'bg-blue-900 text-white border-blue-900'
                     : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
@@ -472,7 +605,46 @@ export default function Staff() {
             ))}
           </div>
 
-          <div className="data-table-wrap">
+          {/* Mobile Payroll Cards */}
+          <div className="md:hidden flex flex-col gap-2.5">
+            {filteredPayments.length === 0 ? (
+              <div className="mobile-card text-center py-8 text-xs text-slate-400">
+                {t('Hakuna rekodi za malipo ya wafanyakazi bado.', 'No employee payment records yet.')}
+              </div>
+            ) : (
+              filteredPayments.map(p => (
+                <button
+                  key={p.id}
+                  type="button"
+                  onClick={() => setPayslip(p)}
+                  className="mobile-card text-left w-full flex flex-col gap-2 active:scale-[0.99] transition"
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <b className="text-sm text-slate-900 block truncate">{p.staffName}</b>
+                      <span className="font-mono text-[11px] text-blue-700 font-semibold">{p.no} · {p.date}</span>
+                    </div>
+                    <Badge variant={p.type === 'Mshahara' ? 'blue' : p.type === 'Posho' ? 'green' : 'amber'}>
+                      {p.type}
+                    </Badge>
+                  </div>
+                  <div className="flex items-center justify-between pt-2 border-t border-slate-100 text-xs">
+                    <div className="text-slate-500">
+                      <span>{p.method} · {p.month}</span>
+                      {p.deduction > 0 && <span className="block text-rose-600 font-mono">-{tzs(p.deduction)}</span>}
+                    </div>
+                    <div className="text-right">
+                      <b className="font-mono text-sm text-emerald-700 block">{tzs(p.net)}</b>
+                      <span className="text-[11px] text-blue-700 font-semibold">{t('Payslip', 'Payslip')} &rarr;</span>
+                    </div>
+                  </div>
+                </button>
+              ))
+            )}
+          </div>
+
+          {/* Desktop Payroll Table */}
+          <div className="hidden md:block data-table-wrap">
             <table className="data-table">
               <thead>
                 <tr>
@@ -779,7 +951,7 @@ export default function Staff() {
               </select>
             </Field>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <Field label={t('Aina ya Malipo', 'Payment Type')}>
                 <select
                   value={payForm.type}
@@ -801,7 +973,7 @@ export default function Staff() {
               </Field>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <Field label={t('Kiasi Ghafi (TZS)', 'Gross Amount (TZS)')}>
                 <input
                   type="number"
@@ -879,7 +1051,7 @@ export default function Staff() {
           onClose={() => setBatchModal(false)}
         >
           <div className="flex flex-col gap-4">
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <Field label={t('Mwezi wa Mishahara', 'Payroll Month')}>
                 <input
                   type="month"
@@ -902,7 +1074,18 @@ export default function Staff() {
             </div>
 
             <div className="border border-slate-200 rounded-xl overflow-hidden max-h-60 overflow-y-auto">
-              <table className="data-table">
+              <div className="md:hidden divide-y divide-slate-100">
+                {activeStaff.map(u => (
+                  <div key={u.id} className="flex items-center justify-between px-3 py-2.5 text-xs">
+                    <div className="min-w-0">
+                      <b className="text-slate-900 block truncate">{u.name}</b>
+                      <span className="text-slate-500">{u.role}</span>
+                    </div>
+                    <b className="font-mono text-slate-900 shrink-0">{tzs(u.salary || 0)}</b>
+                  </div>
+                ))}
+              </div>
+              <table className="hidden md:table data-table">
                 <thead>
                   <tr>
                     <th>{t('Mfanyakazi', 'Employee')}</th>

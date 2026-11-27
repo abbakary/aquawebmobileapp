@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import {
   Wrench,
   Plus,
@@ -32,6 +32,14 @@ export default function Maintenance() {
   const [viewSpare, setViewSpare] = useState(null)
   const [search, setSearch] = useState('')
   const [filterStatus, setFilterStatus] = useState('All')
+
+  useEffect(() => {
+    const onQuickAdd = e => {
+      if (e.detail?.tab === 'maintenance') setNewOrderModal(true)
+    }
+    window.addEventListener('aquacatch:quick-add', onQuickAdd)
+    return () => window.removeEventListener('aquacatch:quick-add', onQuickAdd)
+  }, [])
 
   const boats = s.boats || []
   const orders = s.maintenanceOrders || []
@@ -182,7 +190,7 @@ export default function Maintenance() {
           </button>
           <button
             onClick={() => setNewOrderModal(true)}
-            className="btn-primary"
+            className="hidden md:inline-flex btn-primary"
           >
             <Plus size={16} /> {t('Oda Mpya ya Matengenezo', 'New Work Order')} (<span className="text-xs font-mono">&lt; 1 min</span>)
           </button>
@@ -190,7 +198,7 @@ export default function Maintenance() {
       </div>
 
       {/* Top Fleet Metrics */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         {/* Total Fleet & Operational Rate */}
         <div className="bg-white rounded-xl border border-slate-200 p-4 flex flex-col justify-between shadow-sm">
           <div className="flex items-start justify-between">
@@ -279,7 +287,7 @@ export default function Maintenance() {
       </div>
 
       {/* Navigation Sub-Tabs */}
-      <div className="border-b border-slate-200 flex items-center gap-6 overflow-x-auto">
+      <div className="border-b border-slate-200 flex items-center gap-6 overflow-x-auto no-scrollbar">
         <button
           onClick={() => setTab('orders')}
           className={`pb-3 text-xs font-bold transition flex items-center gap-2 border-b-2 whitespace-nowrap ${
@@ -336,7 +344,7 @@ export default function Maintenance() {
                 className="input-field pl-10 text-xs"
               />
             </div>
-            <div className="flex items-center gap-1.5 overflow-x-auto w-full sm:w-auto">
+            <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar w-full sm:w-auto">
               {['All', 'Reported', 'In Progress', 'Completed'].map(status => (
                 <button
                   key={status}
@@ -353,7 +361,59 @@ export default function Maintenance() {
             </div>
           </div>
 
-          <div className="data-table-wrap">
+          {/* Mobile Work Orders Cards (< md) */}
+          <div className="md:hidden flex flex-col gap-2.5">
+            {filteredOrders.map(item => {
+              const boat = boats.find(b => b.id === item.boatId)
+              return (
+                <div key={item.id} className="mobile-card flex flex-col gap-2">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <span className="font-mono font-bold text-xs text-blue-900 block">
+                        {item.no} · {boat?.name || t('Boti', 'Vessel')} ({boat?.regNo || '-'})
+                      </span>
+                      <b className="text-sm text-slate-900 block truncate">{item.title}</b>
+                      <span className="text-[11px] text-slate-500 block truncate">
+                        {item.mechanic} · {item.date}
+                      </span>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <b className="font-mono text-sm text-slate-900 block tabular-nums">{tzs(item.totalCost)}</b>
+                      <Badge
+                        variant={
+                          item.status === 'Completed'
+                            ? 'green'
+                            : item.status === 'In Progress'
+                              ? 'amber'
+                              : 'blue'
+                        }
+                      >
+                        {item.status === 'Completed' ? t('Imekamilika', 'Completed') : item.status === 'In Progress' ? t('Inaendelea', 'In Progress') : t('Imeripotiwa', 'Reported')}
+                      </Badge>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 pt-1.5 border-t border-slate-100">
+                    <button
+                      onClick={() => setViewOrder(item)}
+                      className="btn-secondary flex-1 text-xs"
+                    >
+                      {t('Maelezo', 'Details')}
+                    </button>
+                    {item.status !== 'Completed' && (
+                      <button
+                        onClick={() => updateOrderStatus(item.id, 'Completed')}
+                        className="btn-primary flex-1 text-xs bg-[#18b8b2] hover:bg-[#139c97]"
+                      >
+                        <Check size={14} /> {t('Kamilisha', 'Sign-off')}
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+
+          <div className="hidden md:block data-table-wrap">
             <table className="data-table">
               <thead>
                 <tr>
@@ -543,19 +603,54 @@ export default function Maintenance() {
       {/* TAB 3: MARINE SPARE PARTS */}
       {tab === 'spares' && (
         <div className="flex flex-col gap-3">
-          <div className="flex justify-between items-center">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
             <span className="text-xs text-slate-500">
               {t('Stoo ya vipuri vya injini hupungua moja kwa moja oda ya matengenezo inapotolewa.', 'Marine engine parts inventory automatically deducts stock when work orders are issued.')}
             </span>
             <button
               onClick={() => setNewSpareModal(true)}
-              className="btn-primary text-xs"
+              className="btn-primary text-xs shrink-0"
             >
-              <Plus size={14} /> {t('Ongeza Kipuri Kipya', 'Add Marine Spare Part')}
+              <Plus size={14} /> + {t('Ongeza Kipuri Kipya', 'Add Marine Spare Part')}
             </button>
           </div>
 
-          <div className="data-table-wrap">
+          {/* Mobile Spare Parts Cards (< md) */}
+          <div className="md:hidden flex flex-col gap-2.5">
+            {spareParts.map(item => {
+              const isLow = (item.stock || 0) <= (item.minStock || 5)
+              return (
+                <div key={item.id} className="mobile-card flex flex-col gap-2">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <span className="font-mono font-bold text-xs text-blue-900 block">{item.partNo} · {item.category}</span>
+                      <b className="text-sm text-slate-900 block truncate">{item.name}</b>
+                      <span className="text-[11px] text-slate-500">
+                        {t('Bei:', 'Sell:')} {tzs(item.sellPrice)} · {t('Chini:', 'Min:')} {item.minStock}
+                      </span>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <b className="font-mono text-sm text-slate-900 block tabular-nums">{item.stock} {item.unit}</b>
+                      <Badge variant={isLow ? 'red' : 'green'}>
+                        {isLow ? t('Stoo Ndogo', 'Low Stock') : t('Ipo Stoo', 'In Stock')}
+                      </Badge>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 pt-1.5 border-t border-slate-100">
+                    <ViewBtn onClick={() => setViewSpare(item)} />
+                    <button
+                      onClick={() => a.addSparePart({ partNo: item.partNo, stock: 10 })}
+                      className="btn-secondary flex-1 text-xs"
+                    >
+                      <Plus size={13} /> +10 {t('Vipande', 'Pcs')}
+                    </button>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+
+          <div className="hidden md:block data-table-wrap">
             <table className="data-table">
               <thead>
                 <tr>
@@ -737,7 +832,7 @@ export default function Maintenance() {
       {newOrderModal && (
         <Modal title={t('Fungua Oda Mpya ya Matengenezo', 'Create Marine Fleet Work Order')} close={() => setNewOrderModal(false)}>
           <div className="flex flex-col gap-4 text-xs">
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <Field label={t('Chombo / Boti', 'Vessel / Boat')}>
                 <select
                   value={woForm.boatId}
@@ -793,7 +888,7 @@ export default function Maintenance() {
               />
             </Field>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <Field label={t('Fundi / Karakana', 'Assigned Mechanic / Marine Workshop')}>
                 <input
                   type="text"
@@ -820,7 +915,7 @@ export default function Maintenance() {
             {/* Spare Parts Usage Picker */}
             <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl">
               <span className="font-bold text-slate-800 block mb-2">{t('Chagua Vipuri Vilivyotumika', 'Marine Spare Parts Requisition')}</span>
-              <div className="flex gap-2">
+              <div className="flex flex-col sm:flex-row gap-2">
                 <select
                   value={woForm.selectedPartId}
                   onChange={e => setWoForm({ ...woForm, selectedPartId: e.target.value })}
@@ -867,7 +962,7 @@ export default function Maintenance() {
             </div>
 
             {/* Cost Summary Breakdown */}
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <Field label={t('Gharama ya Vipuri (TZS)', 'Spare Parts Cost (TZS)')}>
                 <input
                   type="number"
@@ -915,7 +1010,7 @@ export default function Maintenance() {
       {newBoatModal && (
         <Modal title={t('Sajili Boti / Chombo cha Uvuvi', 'Register Fishing Boat / Marine Vessel')} close={() => setNewBoatModal(false)}>
           <div className="flex flex-col gap-4 text-xs">
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <Field label={t('Namba ya Usajili wa Boti #', 'Boat Registration #')}>
                 <input
                   type="text"
@@ -935,7 +1030,7 @@ export default function Maintenance() {
               </Field>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <Field label={t('Aina ya Umiliki', 'Ownership Structure')}>
                 <select
                   value={boatForm.ownerType}
@@ -964,7 +1059,7 @@ export default function Maintenance() {
               </Field>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <Field label={t('Aina ya Injini', 'Engine Specifications')}>
                 <input
                   type="text"
@@ -984,7 +1079,7 @@ export default function Maintenance() {
               </Field>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <Field label={t('Saa za Injini za Sasa', 'Current Engine Hours')}>
                 <input
                   type="number"
@@ -1020,7 +1115,7 @@ export default function Maintenance() {
       {newSpareModal && (
         <Modal title={t('Sajili Kipuri Kipya cha Boti', 'Register Marine Spare Part')} close={() => setNewSpareModal(false)}>
           <div className="flex flex-col gap-4 text-xs">
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <Field label={t('Jina la Kipuri', 'Part Name')}>
                 <input
                   type="text"
@@ -1042,7 +1137,7 @@ export default function Maintenance() {
               </Field>
             </div>
 
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <Field label={t('Kundi', 'Category')}>
                 <select
                   value={partForm.category}
@@ -1077,7 +1172,7 @@ export default function Maintenance() {
               </Field>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <Field label={t('Bei ya Kununulia (TZS)', 'Wholesale Cost Price (TZS)')}>
                 <input
                   type="number"
@@ -1137,7 +1232,7 @@ export default function Maintenance() {
                 </Badge>
               </div>
 
-              <div className="grid grid-cols-2 gap-2 pt-1">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
                 <div>
                   <span className="text-slate-400 block text-[10px]">{t('BOTI / CHOMBO:', 'VESSEL:')}</span>
                   <b className="text-slate-900">

@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import {
   FileText,
   ShieldCheck,
@@ -31,6 +31,14 @@ export default function Compliance() {
     exp: '2027-04-30'
   })
 
+  useEffect(() => {
+    const onQuickAdd = e => {
+      if (e.detail?.tab === 'compliance') setOpen(true)
+    }
+    window.addEventListener('aquacatch:quick-add', onQuickAdd)
+    return () => window.removeEventListener('aquacatch:quick-add', onQuickAdd)
+  }, [])
+
   const sortedComp = [...s.comp].sort((x, y) => x.exp.localeCompare(y.exp))
 
   const handleSave = () => {
@@ -60,7 +68,7 @@ export default function Compliance() {
             {t('Nyaraka za Wizara ya Mifugo na Uvuvi, vibali vya usafirishaji, na vyeti vya afya.', 'Ministry of Livestock & Fisheries regulatory archives, movement permits, and sanitary certificate expiries.')}
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="hidden md:flex items-center gap-2">
           <button onClick={() => setOpen(true)} className="btn-primary">
             <Plus size={16} /> {t('Hifadhi Kibali / Leseni Mpya', 'Archive New Permit / Licence')}
           </button>
@@ -79,7 +87,7 @@ export default function Compliance() {
       </div>
 
       {/* Permits Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-5">
         {sortedComp.map(c => {
           const daysLeft = Math.ceil((new Date(c.exp) - new Date()) / 864e5)
           const isExpired = daysLeft < 0
@@ -88,32 +96,34 @@ export default function Compliance() {
           return (
             <div
               key={c.id}
-              className={`p-5 rounded-2xl bg-white border flex flex-col justify-between gap-4 shadow-sm ${
+              className={`p-4 sm:p-5 rounded-2xl bg-white border flex flex-col justify-between gap-3 sm:gap-4 shadow-sm ${
                 isExpired ? 'border-rose-300 bg-rose-50/20' : isExpiringSoon ? 'border-amber-300 bg-amber-50/20' : 'border-slate-200'
               }`}
             >
               <div className="flex items-start justify-between gap-2">
-                <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-800 flex items-center justify-center">
+                <div className="flex items-start gap-2.5 min-w-0">
+                  <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-800 flex items-center justify-center shrink-0">
                     <FileText size={16} />
                   </div>
-                  <div>
-                    <b className="text-sm text-slate-900 block">{c.type}</b>
-                    <span className="font-mono text-xs text-blue-700 font-semibold">{c.ref}</span>
+                  <div className="min-w-0">
+                    <b className="text-sm text-slate-900 block leading-snug">{c.type}</b>
+                    <span className="font-mono text-xs text-blue-700 font-semibold break-all">{c.ref}</span>
                   </div>
                 </div>
-                <Badge variant={isExpired ? 'red' : isExpiringSoon ? 'amber' : 'green'}>
-                  {isExpired ? t('Imeisha Muda', 'Expired') : isExpiringSoon ? `${daysLeft} ${t('siku zimebaki', 'days left')}` : t('Hai', 'Valid')}
-                </Badge>
+                <div className="shrink-0">
+                  <Badge variant={isExpired ? 'red' : isExpiringSoon ? 'amber' : 'green'}>
+                    {isExpired ? t('Imeisha Muda', 'Expired') : isExpiringSoon ? `${daysLeft} ${t('siku zimebaki', 'days left')}` : t('Hai', 'Valid')}
+                  </Badge>
+                </div>
               </div>
 
               <div className="text-xs text-slate-600 flex flex-col gap-1.5 border-t border-slate-100 pt-3">
-                <div className="flex justify-between">
-                  <span className="text-slate-400">{t('Mamlaka Iliyotoa:', 'Issuing Authority:')}</span>
-                  <b className="text-slate-800">{c.who}</b>
+                <div className="flex justify-between gap-2">
+                  <span className="text-slate-400 shrink-0">{t('Mamlaka Iliyotoa:', 'Issuing Authority:')}</span>
+                  <b className="text-slate-800 text-right min-w-0 break-words">{c.who}</b>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-400">{t('Tarehe ya Kuisha:', 'Expiry Date:')}</span>
+                <div className="flex justify-between gap-2">
+                  <span className="text-slate-400 shrink-0">{t('Tarehe ya Kuisha:', 'Expiry Date:')}</span>
                   <b className="font-mono text-slate-900">{c.exp}</b>
                 </div>
               </div>

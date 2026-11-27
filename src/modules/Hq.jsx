@@ -123,13 +123,13 @@ export default function Hq({ go }) {
             {t(`Muhtasari wa matawi yote ya ${T?.name || 'Kampuni'} Ziwa Victoria na Ziwa Tanganyika.`, `Cross-branch consolidation for ${T?.name || 'Fisheries Group'} across Lake Victoria & Lake Tanganyika value chains.`)}
           </p>
         </div>
-        <div className="flex items-center gap-3">
-          <div className="flex bg-slate-200/80 p-0.5 rounded-lg text-xs font-semibold">
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="flex bg-slate-200/80 p-0.5 rounded-lg text-xs font-semibold overflow-x-auto no-scrollbar">
             {['7 days', '30 days', 'All time'].map(p => (
               <button
                 key={p}
                 onClick={() => setPeriod(p)}
-                className={`px-3 py-1.5 rounded-md transition ${period === p ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'}`}
+                className={`px-3 py-1.5 rounded-md whitespace-nowrap transition ${period === p ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'}`}
               >
                 {p === '7 days' ? t('Siku 7', '7 days') : p === '30 days' ? t('Siku 30', '30 days') : t('Muda Wote', 'All time')}
               </button>
@@ -241,16 +241,88 @@ export default function Hq({ go }) {
 
       {/* Multi-Branch Side-by-Side Table */}
       <div className="panel p-0 overflow-hidden">
-        <div className="p-4 bg-slate-50 border-b border-slate-200 flex justify-between items-center">
+        <div className="p-4 bg-slate-50 border-b border-slate-200 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
           <div>
             <h3 className="text-sm font-bold text-slate-900 m-0">{t('Jedwali la Ulinganisho wa Vituo', 'Landing Station Comparison Matrix')}</h3>
             <p className="text-xs text-slate-500 m-0">{t("Bofya 'Badili Tawi' kuona taarifa za kituo husika", "Click 'Switch Branch' to navigate operational data to that specific station")}</p>
           </div>
-          <span className="text-xs text-slate-500 font-semibold font-mono">
+          <span className="text-xs text-slate-500 font-semibold font-mono shrink-0">
             {t('Kituo:', 'Active:')} <strong>{B?.name || t('Vituo Vyote', 'All Stations')}</strong>
           </span>
         </div>
-        <div className="data-table-wrap border-0 rounded-none">
+
+        {/* Mobile Station Cards */}
+        <div className="md:hidden p-3 flex flex-col gap-2.5 bg-slate-50/40">
+          {rows.map(r => {
+            const isCurrent = B && r.b.id === B.id
+            return (
+              <div
+                key={r.b.id}
+                className={`mobile-card flex flex-col gap-2.5 ${isCurrent ? 'border-blue-300 bg-blue-50/30' : ''}`}
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <MapPin size={15} className={`shrink-0 ${isCurrent ? 'text-blue-700' : 'text-slate-400'}`} />
+                    <b className="text-sm text-slate-900 truncate">{r.b.name}</b>
+                  </div>
+                  {isCurrent && (
+                    <span className="text-[10px] bg-blue-100 text-blue-800 px-1.5 py-0.5 rounded font-bold shrink-0">
+                      {t('SASA', 'CURRENT')}
+                    </span>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-2 gap-2 text-xs pt-1 border-t border-slate-100">
+                  <div>
+                    <span className="text-[11px] text-slate-400 block">{t('Mapato', 'Revenue')}</span>
+                    <b className="font-mono text-slate-900">{tzs(r.m.rev)}</b>
+                  </div>
+                  <div className="text-right">
+                    <span className="text-[11px] text-slate-400 block">{t('Faida Halisi', 'Net Profit')}</span>
+                    <b className={`font-mono ${r.m.net >= 0 ? 'text-emerald-700' : 'text-rose-600'}`}>
+                      {tzs(r.m.net)}
+                    </b>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-3 gap-2 bg-slate-50 rounded-lg p-2 text-[11px]">
+                  <div>
+                    <span className="text-slate-400 block">{t('Manunuzi', 'Bought')}</span>
+                    <b className="font-mono text-slate-800">{f(r.m.bkg)} kg</b>
+                  </div>
+                  <div>
+                    <span className="text-slate-400 block">{t('Mauzo', 'Sold')}</span>
+                    <b className="font-mono text-slate-800">{f(r.m.skg)} kg</b>
+                  </div>
+                  <div>
+                    <span className="text-slate-400 block">{t('Stoo', 'Stock')}</span>
+                    <b className="font-mono text-blue-800">{f(r.m.stk)} kg</b>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-end gap-1.5 pt-1 border-t border-slate-100">
+                  <ViewBtn onClick={() => setViewBranch(r)} />
+                  {!isCurrent ? (
+                    <button
+                      onClick={() => {
+                        x.switchBranch(r.b.id)
+                        go('home')
+                      }}
+                      className="btn-primary text-xs py-1.5 px-3 bg-blue-800 hover:bg-blue-900"
+                    >
+                      {t('Badili Tawi', 'Switch View')}
+                    </button>
+                  ) : (
+                    <span className="text-xs text-blue-700 font-bold px-2">{t('Unatazama', 'Viewing')}</span>
+                  )}
+                </div>
+              </div>
+            )
+          })}
+        </div>
+
+        {/* Desktop Station Table */}
+        <div className="hidden md:block data-table-wrap border-0 rounded-none">
           <table className="data-table">
             <thead>
               <tr>

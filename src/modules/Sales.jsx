@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import {
   Building2,
   DollarSign,
@@ -25,6 +25,15 @@ export default function Sales() {
   const [viewCus, setViewCus] = useState(null)
   const [amt, setAmt] = useState('')
   const [search, setSearch] = useState('')
+
+  useEffect(() => {
+    const onQuickAdd = e => {
+      if (e.detail?.tab !== 'sales') return
+      setModalMode('sale')
+    }
+    window.addEventListener('aquacatch:quick-add', onQuickAdd)
+    return () => window.removeEventListener('aquacatch:quick-add', onQuickAdd)
+  }, [])
 
   const st = stock(s)
   const keys = Object.keys(st)
@@ -84,10 +93,10 @@ export default function Sales() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <button onClick={() => setModalMode('sale')} className="btn-primary">
+          <button onClick={() => setModalMode('sale')} className="hidden md:inline-flex btn-primary">
             <Plus size={16} /> {t('Oda Mpya ya Mauzo', 'New Industry Sales Order')}
           </button>
-          <button onClick={() => setModalMode('cus')} className="btn-secondary text-xs">
+          <button onClick={() => setModalMode('cus')} className="btn-secondary text-xs w-full md:w-auto justify-center">
             <Building2 size={14} /> {t('Ongeza Kiwanda', 'Add Factory Account')}
           </button>
         </div>
@@ -140,8 +149,42 @@ export default function Sales() {
         </div>
       </div>
 
-      {/* Tab Selector */}
-      <div className="flex items-center gap-2 border-b border-slate-200">
+      {/* Mobile Pill Switcher + Search (< md) */}
+      <div className="flex md:hidden flex-col gap-2.5">
+        <div className="flex items-center gap-2 bg-slate-200/80 p-1 rounded-xl">
+          <button
+            type="button"
+            onClick={() => setTab('orders')}
+            className={`flex-1 min-h-[40px] px-3 py-1.5 rounded-lg text-xs font-bold transition ${
+              tab === 'orders' ? 'bg-[#052d56] text-white shadow-sm' : 'text-slate-600'
+            }`}
+          >
+            {t('Oda za Mauzo', 'Orders')} ({s.sales.length})
+          </button>
+          <button
+            type="button"
+            onClick={() => setTab('customers')}
+            className={`flex-1 min-h-[40px] px-3 py-1.5 rounded-lg text-xs font-bold transition ${
+              tab === 'customers' ? 'bg-[#052d56] text-white shadow-sm' : 'text-slate-600'
+            }`}
+          >
+            {t('Viwanda', 'Factories')} ({s.customers.length})
+          </button>
+        </div>
+        <div className="relative">
+          <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+          <input
+            type="text"
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            placeholder={tab === 'orders' ? t('Tafuta ankara au kiwanda...', 'Search invoice or factory...') : t('Tafuta kiwanda...', 'Search factory...')}
+            className="input-field pl-10 text-sm"
+          />
+        </div>
+      </div>
+
+      {/* Desktop Tab Selector */}
+      <div className="hidden md:flex items-center gap-2 border-b border-slate-200">
         <button
           onClick={() => setTab('orders')}
           className={`pb-3 px-2 text-xs font-bold border-b-2 transition ${
@@ -161,157 +204,258 @@ export default function Sales() {
       </div>
 
       {tab === 'orders' ? (
-        /* Sales Orders Table */
-        <div className="data-table-wrap">
-          <table className="data-table">
-            <thead>
-              <tr>
-                <th>{t('Ankara / Oda', 'Invoice / Order')}</th>
-                <th>{t('Kiwanda', 'Processing Factory')}</th>
-                <th>{t('Samaki & Daraja', 'Fish & Grade')}</th>
-                <th>{t('Uzito Uliosafirishwa', 'Dispatched Quantity')}</th>
-                <th>{t('Jumla ya Ankara', 'Total Invoiced')}</th>
-                <th>{t('Kiasi Kilicholipwa', 'Paid Amount')}</th>
-                <th>{t('Salio la Deni', 'Balance Due')}</th>
-                <th>{t('Usafirishaji', 'Dispatch Logistics')}</th>
-                <th className="text-right">{t('Vitendo', 'Actions')}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {[...s.sales].reverse().map(x => {
+        <>
+          {/* Mobile Orders Cards (< md) */}
+          <div className="md:hidden flex flex-col gap-2.5">
+            {[...s.sales]
+              .reverse()
+              .filter(x => {
+                if (!search.trim()) return true
+                const cusObj = s.customers.find(c => c.id === x.cus)
+                const q = search.toLowerCase()
+                return (x.no || '').toLowerCase().includes(q) || (cusObj?.name || '').toLowerCase().includes(q) || spLabel(x.sp).toLowerCase().includes(q)
+              })
+              .map(x => {
                 const cusObj = s.customers.find(c => c.id === x.cus)
                 const saleTotal = x.kg * x.price
                 const balDue = saleTotal - x.paid
                 return (
-                  <tr key={x.id}>
-                    <td>
-                      <b className="font-mono text-blue-700">{x.no}</b>
-                      <small className="block font-mono text-slate-400">{x.date}</small>
-                    </td>
-                    <td>
-                      <b className="text-slate-900 block">{cusObj?.name || x.cus}</b>
-                      <small className="text-slate-400">{cusObj?.location || 'Mwanza'}</small>
-                    </td>
-                    <td>
-                      <div className="flex items-center gap-2">
-                        <FishPhoto sp={x.sp} size={30} />
-                        <div>
-                          <span className="font-medium text-slate-900 block">{spLabel(x.sp)}</span>
-                          <small className="text-slate-500">{t('Daraja', 'Grade')} {x.grade}</small>
+                  <div key={x.id} className="mobile-card flex flex-col gap-2.5">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <FishPhoto sp={x.sp} size={38} />
+                        <div className="min-w-0">
+                          <b className="text-sm text-slate-900 block truncate">{cusObj?.name || x.cus}</b>
+                          <span className="text-[11px] font-mono text-blue-700">{x.no} · {x.date}</span>
                         </div>
                       </div>
-                    </td>
-                    <td>
-                      <b className="font-mono text-slate-900">{f(x.kg)} kg</b>
-                      <small className="block text-slate-400 font-mono">@ {tzs(x.price)}/kg</small>
-                    </td>
-                    <td>
-                      <b className="font-mono text-slate-900">{tzs(saleTotal)}</b>
-                    </td>
-                    <td>
-                      <span className="font-mono text-emerald-700 font-semibold">{tzs(x.paid)}</span>
-                    </td>
-                    <td>
-                      <b className={`font-mono ${balDue > 0 ? 'text-rose-600' : 'text-slate-400'}`}>
-                        {tzs(balDue)}
-                      </b>
-                    </td>
-                    <td>
                       <Badge variant={x.dis.st === 'Delivered' ? 'green' : 'amber'}>
-                        {x.dis.st === 'Delivered' ? t('Imefika', 'Delivered') : t('Iko Njiani', 'In transit')}
+                        {x.dis.st === 'Delivered' ? t('Imefika', 'Delivered') : t('Njiani', 'Transit')}
                       </Badge>
-                      <small className="block text-slate-400">{x.dis.veh || 'KYC Truck'}</small>
-                    </td>
-                    <td className="text-right">
-                      <div className="flex items-center justify-end gap-1.5">
-                        <ViewBtn onClick={() => setViewSale(x)} />
-                        <button
-                          onClick={() => setInv(x)}
-                          title={t('Chapa Ankara', 'Print Sales Invoice')}
-                          className="p-1.5 text-slate-500 hover:text-blue-700 hover:bg-blue-50 rounded"
-                        >
-                          <Printer size={15} />
-                        </button>
-                        {balDue > 0 && (
-                          <button
-                            onClick={() => {
-                              setRc(x)
-                              setAmt(String(balDue))
-                            }}
-                            className="btn-primary text-xs py-1 px-2.5 bg-emerald-600 hover:bg-emerald-700"
-                          >
-                            {t('Pokea Malipo', 'Receive')}
-                          </button>
-                        )}
+                    </div>
+                    <div className="grid grid-cols-3 gap-2 text-xs bg-slate-50 rounded-xl p-2 border border-slate-100">
+                      <div>
+                        <span className="text-[10px] text-slate-400 block">{t('Samaki', 'Qty')}</span>
+                        <b className="font-mono text-slate-900">{f(x.kg)} kg</b>
                       </div>
-                    </td>
-                  </tr>
+                      <div>
+                        <span className="text-[10px] text-slate-400 block">{t('Jumla', 'Total')}</span>
+                        <b className="font-mono text-slate-900">{tzs(saleTotal)}</b>
+                      </div>
+                      <div>
+                        <span className="text-[10px] text-slate-400 block">{t('Salio', 'Due')}</span>
+                        <b className={`font-mono ${balDue > 0 ? 'text-rose-600' : 'text-emerald-700'}`}>{tzs(balDue)}</b>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <ViewBtn onClick={() => setViewSale(x)} />
+                      <button
+                        type="button"
+                        onClick={() => setInv(x)}
+                        className="btn-secondary text-xs py-1.5 px-3"
+                      >
+                        <Printer size={14} /> {t('Ankara', 'Invoice')}
+                      </button>
+                      {balDue > 0 && (
+                        <button
+                          type="button"
+                          onClick={() => { setRc(x); setAmt(String(balDue)) }}
+                          className="btn-primary flex-1 text-xs bg-[#18b8b2] hover:bg-[#139c97]"
+                        >
+                          {t('Pokea Malipo', 'Receive')}
+                        </button>
+                      )}
+                    </div>
+                  </div>
                 )
               })}
-            </tbody>
-          </table>
-        </div>
+          </div>
+
+          {/* Desktop Sales Orders Table */}
+          <div className="hidden md:block data-table-wrap">
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th>{t('Ankara / Oda', 'Invoice / Order')}</th>
+                  <th>{t('Kiwanda', 'Processing Factory')}</th>
+                  <th>{t('Samaki & Daraja', 'Fish & Grade')}</th>
+                  <th>{t('Uzito Uliosafirishwa', 'Dispatched Quantity')}</th>
+                  <th>{t('Jumla ya Ankara', 'Total Invoiced')}</th>
+                  <th>{t('Kiasi Kilicholipwa', 'Paid Amount')}</th>
+                  <th>{t('Salio la Deni', 'Balance Due')}</th>
+                  <th>{t('Usafirishaji', 'Dispatch Logistics')}</th>
+                  <th className="text-right">{t('Vitendo', 'Actions')}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {[...s.sales].reverse().map(x => {
+                  const cusObj = s.customers.find(c => c.id === x.cus)
+                  const saleTotal = x.kg * x.price
+                  const balDue = saleTotal - x.paid
+                  return (
+                    <tr key={x.id}>
+                      <td>
+                        <b className="font-mono text-blue-700">{x.no}</b>
+                        <small className="block font-mono text-slate-400">{x.date}</small>
+                      </td>
+                      <td>
+                        <b className="text-slate-900 block">{cusObj?.name || x.cus}</b>
+                        <small className="text-slate-400">{cusObj?.location || 'Mwanza'}</small>
+                      </td>
+                      <td>
+                        <div className="flex items-center gap-2">
+                          <FishPhoto sp={x.sp} size={30} />
+                          <div>
+                            <span className="font-medium text-slate-900 block">{spLabel(x.sp)}</span>
+                            <small className="text-slate-500">{t('Daraja', 'Grade')} {x.grade}</small>
+                          </div>
+                        </div>
+                      </td>
+                      <td>
+                        <b className="font-mono text-slate-900">{f(x.kg)} kg</b>
+                        <small className="block text-slate-400 font-mono">@ {tzs(x.price)}/kg</small>
+                      </td>
+                      <td>
+                        <b className="font-mono text-slate-900">{tzs(saleTotal)}</b>
+                      </td>
+                      <td>
+                        <span className="font-mono text-emerald-700 font-semibold">{tzs(x.paid)}</span>
+                      </td>
+                      <td>
+                        <b className={`font-mono ${balDue > 0 ? 'text-rose-600' : 'text-slate-400'}`}>
+                          {tzs(balDue)}
+                        </b>
+                      </td>
+                      <td>
+                        <Badge variant={x.dis.st === 'Delivered' ? 'green' : 'amber'}>
+                          {x.dis.st === 'Delivered' ? t('Imefika', 'Delivered') : t('Iko Njiani', 'In transit')}
+                        </Badge>
+                        <small className="block text-slate-400">{x.dis.veh || 'KYC Truck'}</small>
+                      </td>
+                      <td className="text-right">
+                        <div className="flex items-center justify-end gap-1.5">
+                          <ViewBtn onClick={() => setViewSale(x)} />
+                          <button
+                            onClick={() => setInv(x)}
+                            title={t('Chapa Ankara', 'Print Sales Invoice')}
+                            className="p-1.5 text-slate-500 hover:text-blue-700 hover:bg-blue-50 rounded"
+                          >
+                            <Printer size={15} />
+                          </button>
+                          {balDue > 0 && (
+                            <button
+                              onClick={() => {
+                                setRc(x)
+                                setAmt(String(balDue))
+                              }}
+                              className="btn-primary text-xs py-1 px-2.5 bg-emerald-600 hover:bg-emerald-700"
+                            >
+                              {t('Pokea Malipo', 'Receive')}
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+        </>
       ) : (
-        /* Customers Table */
-        <div className="data-table-wrap">
-          <table className="data-table">
-            <thead>
-              <tr>
-                <th>{t('Namba & Kiwanda', 'Customer Code & Factory')}</th>
-                <th>{t('Mtu wa Mawasiliano', 'Primary Contact')}</th>
-                <th>{t('Mahali Kiwanda Kilipo', 'Physical Plant Location')}</th>
-                <th>{t('Ukomo wa Mkopo', 'Credit Limit')}</th>
-                <th>{t('Deni la Sasa', 'Current Balance Owed')}</th>
-                <th>{t('Matumizi ya Mkopo', 'Credit Utilization')}</th>
-                <th className="text-right">{t('Vitendo', 'Actions')}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {s.customers.map(c => {
+        <>
+          {/* Mobile Factory Cards (< md) */}
+          <div className="md:hidden flex flex-col gap-2.5">
+            {s.customers
+              .filter(c => !search.trim() || c.name.toLowerCase().includes(search.toLowerCase()) || (c.location || '').toLowerCase().includes(search.toLowerCase()))
+              .map(c => {
                 const owed = cusBal(s, c.id)
                 const limit = c.limit || 30000000
                 const util = Math.min(100, Math.round((owed / limit) * 100))
                 return (
-                  <tr key={c.id}>
-                    <td>
-                      <b className="text-slate-900 block">{c.name}</b>
-                      <small className="font-mono text-slate-400">{c.code || 'IND-0' + c.id.slice(1)}</small>
-                    </td>
-                    <td>
-                      <span className="text-slate-800 block">{c.contact || 'Commercial Purchasing Dept'}</span>
-                      <small className="text-slate-500 font-mono">{c.phone}</small>
-                    </td>
-                    <td>
-                      <span className="text-slate-700 text-xs">{c.location || 'Lake Victoria Industrial Area'}</span>
-                    </td>
-                    <td>
-                      <b className="font-mono text-slate-900">{tzs(limit)}</b>
-                    </td>
-                    <td>
-                      <b className={`font-mono text-sm ${owed > 0 ? 'text-blue-800' : 'text-slate-400'}`}>
-                        {tzs(owed)}
-                      </b>
-                    </td>
-                    <td>
-                      <div className="flex items-center gap-2">
-                        <div className="w-24 bg-slate-100 rounded-full h-1.5 overflow-hidden">
-                          <div
-                            className={`h-full rounded-full ${util > 80 ? 'bg-rose-500' : 'bg-blue-600'}`}
-                            style={{ width: `${util}%` }}
-                          />
-                        </div>
-                        <span className="text-xs font-mono text-slate-500">{util}%</span>
+                  <div key={c.id} className="mobile-card flex flex-col gap-2.5" onClick={() => setViewCus(c)}>
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <b className="text-sm text-slate-900 block truncate">{c.name}</b>
+                        <span className="text-[11px] text-slate-500 block truncate">{c.contact || 'Commercial Dept'} · {c.phone}</span>
                       </div>
-                    </td>
-                    <td className="text-right">
-                      <ViewBtn onClick={() => setViewCus(c)} />
-                    </td>
-                  </tr>
+                      <Badge variant={owed > 0 ? 'blue' : 'green'}>
+                        {owed > 0 ? t('Deni', 'Active') : t('Safi', 'Settled')}
+                      </Badge>
+                    </div>
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="text-slate-500">{t('Deni:', 'Balance:')} <b className="font-mono text-slate-900">{tzs(owed)}</b></span>
+                      <span className="font-mono text-slate-500">{util}% {t('ya kikomo', 'limit')}</span>
+                    </div>
+                    <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
+                      <div className={`h-full rounded-full ${util > 80 ? 'bg-rose-500' : 'bg-[#18b8b2]'}`} style={{ width: `${util}%` }} />
+                    </div>
+                  </div>
                 )
               })}
-            </tbody>
-          </table>
-        </div>
+          </div>
+
+          {/* Desktop Customers Table */}
+          <div className="hidden md:block data-table-wrap">
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th>{t('Namba & Kiwanda', 'Customer Code & Factory')}</th>
+                  <th>{t('Mtu wa Mawasiliano', 'Primary Contact')}</th>
+                  <th>{t('Mahali Kiwanda Kilipo', 'Physical Plant Location')}</th>
+                  <th>{t('Ukomo wa Mkopo', 'Credit Limit')}</th>
+                  <th>{t('Deni la Sasa', 'Current Balance Owed')}</th>
+                  <th>{t('Matumizi ya Mkopo', 'Credit Utilization')}</th>
+                  <th className="text-right">{t('Vitendo', 'Actions')}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {s.customers.map(c => {
+                  const owed = cusBal(s, c.id)
+                  const limit = c.limit || 30000000
+                  const util = Math.min(100, Math.round((owed / limit) * 100))
+                  return (
+                    <tr key={c.id}>
+                      <td>
+                        <b className="text-slate-900 block">{c.name}</b>
+                        <small className="font-mono text-slate-400">{c.code || 'IND-0' + c.id.slice(1)}</small>
+                      </td>
+                      <td>
+                        <span className="text-slate-800 block">{c.contact || 'Commercial Purchasing Dept'}</span>
+                        <small className="text-slate-500 font-mono">{c.phone}</small>
+                      </td>
+                      <td>
+                        <span className="text-slate-700 text-xs">{c.location || 'Lake Victoria Industrial Area'}</span>
+                      </td>
+                      <td>
+                        <b className="font-mono text-slate-900">{tzs(limit)}</b>
+                      </td>
+                      <td>
+                        <b className={`font-mono text-sm ${owed > 0 ? 'text-blue-800' : 'text-slate-400'}`}>
+                          {tzs(owed)}
+                        </b>
+                      </td>
+                      <td>
+                        <div className="flex items-center gap-2">
+                          <div className="w-24 bg-slate-100 rounded-full h-1.5 overflow-hidden">
+                            <div
+                              className={`h-full rounded-full ${util > 80 ? 'bg-rose-500' : 'bg-blue-600'}`}
+                              style={{ width: `${util}%` }}
+                            />
+                          </div>
+                          <span className="text-xs font-mono text-slate-500">{util}%</span>
+                        </div>
+                      </td>
+                      <td className="text-right">
+                        <ViewBtn onClick={() => setViewCus(c)} />
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+        </>
       )}
 
       {viewSale && (() => {
@@ -446,7 +590,7 @@ export default function Sales() {
               </select>
             </Field>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <Field label={t('Kiasi cha Kuuza (kg)', 'Quantity to Sell (kg)')}>
                 <input
                   type="number"
@@ -525,7 +669,7 @@ export default function Sales() {
               />
             </Field>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <Field label={t('Mtu wa Mawasiliano', 'Plant Contact Person')}>
                 <input
                   type="text"

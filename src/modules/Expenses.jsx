@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import {
   DollarSign,
   Receipt,
@@ -39,7 +39,16 @@ export default function Expenses({ go }) {
   const { s, a, t } = useS()
   const [open, setOpen] = useState(false)
   const [viewExp, setViewExp] = useState(null)
+  const [catFilter, setCatFilter] = useState('All')
   const [d, setD] = useState({ cat: CATS[0], amt: '350000', desc: '' })
+
+  useEffect(() => {
+    const onQuickAdd = e => {
+      if (e.detail?.tab === 'expenses') setOpen(true)
+    }
+    window.addEventListener('aquacatch:quick-add', onQuickAdd)
+    return () => window.removeEventListener('aquacatch:quick-add', onQuickAdd)
+  }, [])
 
   const rev = s.sales.reduce((t, x) => t + x.kg * x.price, 0)
   const cogs = s.sales.reduce((t, x) => t + x.cogs, 0)
@@ -79,7 +88,7 @@ export default function Expenses({ go }) {
             {t('Hesabu za barafu, vibarua, umeme, usafiri wa baridi, na faida halisi.', 'Landed cost accounting: ice, dock labor, electricity, refrigerated transit, and net profit calculations.')}
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="hidden md:flex items-center gap-2">
           <button onClick={() => setOpen(true)} className="btn-primary">
             <Plus size={16} /> {t('Rekodi Matumizi Mapya', 'Record Operational Expense')}
           </button>
@@ -182,11 +191,52 @@ export default function Expenses({ go }) {
 
       {/* Expenses Ledger Table */}
       <div className="panel p-0 overflow-hidden">
-        <div className="p-4 bg-slate-50 border-b border-slate-200">
-          <h3 className="text-sm font-bold text-slate-900 m-0">{t('Daftari la Matumizi ya Uendeshaji', 'Operating Expense Journal')}</h3>
-          <p className="text-xs text-slate-500 m-0">{t('Matumizi yote yaliyorekodiwa na uhasibu na uendeshaji', 'Line-item expenses recorded by accounting and operations')}</p>
+        <div className="p-4 bg-slate-50 border-b border-slate-200 flex flex-col gap-2.5">
+          <div>
+            <h3 className="text-sm font-bold text-slate-900 m-0">{t('Daftari la Matumizi ya Uendeshaji', 'Operating Expense Journal')}</h3>
+            <p className="text-xs text-slate-500 m-0">{t('Matumizi yote yaliyorekodiwa na uhasibu na uendeshaji', 'Line-item expenses recorded by accounting and operations')}</p>
+          </div>
+          <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-0.5">
+            {['All', ...CATS].map(cat => (
+              <button
+                key={cat}
+                type="button"
+                onClick={() => setCatFilter(cat)}
+                className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold whitespace-nowrap border transition ${
+                  catFilter === cat
+                    ? 'bg-[#052d56] text-white border-[#052d56]'
+                    : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-100'
+                }`}
+              >
+                {cat === 'All' ? t('Zote', 'All') : cat.split('&')[0].trim()}
+              </button>
+            ))}
+          </div>
         </div>
-        <div className="data-table-wrap border-0 rounded-none">
+
+        {/* Mobile Expense Cards (< md) */}
+        <div className="md:hidden p-3 flex flex-col gap-2.5 bg-slate-50/50">
+          {[...s.exps]
+            .reverse()
+            .filter(e => catFilter === 'All' || e.cat === catFilter)
+            .map(e => (
+              <div key={e.id} className="mobile-card flex items-center justify-between gap-2.5" onClick={() => setViewExp(e)}>
+                <div className="min-w-0">
+                  <b className="text-sm text-slate-900 block truncate">{e.cat}</b>
+                  <span className="text-[11px] text-slate-600 block truncate">{e.desc || e.cat}</span>
+                  <span className="text-[10px] font-mono text-slate-400">{e.date}</span>
+                </div>
+                <div className="text-right shrink-0">
+                  <b className="font-mono text-sm text-slate-900 block tabular-nums">{tzs(e.amt)}</b>
+                  <span className="text-[10px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                    {t('Imeidhinishwa', 'Approved')}
+                  </span>
+                </div>
+              </div>
+            ))}
+        </div>
+
+        <div className="hidden md:block data-table-wrap border-0 rounded-none">
           <table className="data-table">
             <thead>
               <tr>
@@ -199,30 +249,33 @@ export default function Expenses({ go }) {
               </tr>
             </thead>
             <tbody>
-              {[...s.exps].reverse().map(e => (
-                <tr key={e.id}>
-                  <td>
-                    <b className="text-slate-900">{e.cat}</b>
-                  </td>
-                  <td>
-                    <span className="text-slate-600 text-xs">{e.desc || e.cat}</span>
-                  </td>
-                  <td>
-                    <b className="font-mono text-slate-900">{tzs(e.amt)}</b>
-                  </td>
-                  <td>
-                    <span className="font-mono text-xs text-slate-500">{e.date}</span>
-                  </td>
-                  <td>
-                    <span className="text-xs font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
-                      {t('Imeidhinishwa', 'Approved')}
-                    </span>
-                  </td>
-                  <td className="text-right">
-                    <ViewBtn onClick={() => setViewExp(e)} />
-                  </td>
-                </tr>
-              ))}
+              {[...s.exps]
+                .reverse()
+                .filter(e => catFilter === 'All' || e.cat === catFilter)
+                .map(e => (
+                  <tr key={e.id}>
+                    <td>
+                      <b className="text-slate-900">{e.cat}</b>
+                    </td>
+                    <td>
+                      <span className="text-slate-600 text-xs">{e.desc || e.cat}</span>
+                    </td>
+                    <td>
+                      <b className="font-mono text-slate-900">{tzs(e.amt)}</b>
+                    </td>
+                    <td>
+                      <span className="font-mono text-xs text-slate-500">{e.date}</span>
+                    </td>
+                    <td>
+                      <span className="text-xs font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                        {t('Imeidhinishwa', 'Approved')}
+                      </span>
+                    </td>
+                    <td className="text-right">
+                      <ViewBtn onClick={() => setViewExp(e)} />
+                    </td>
+                  </tr>
+                ))}
             </tbody>
           </table>
         </div>

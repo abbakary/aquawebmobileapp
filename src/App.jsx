@@ -56,7 +56,7 @@ import Super from './modules/Super'
 import Landing from './modules/Landing'
 import Register from './modules/Register'
 import Login from './modules/Login'
-import { PWAInstallButton, OfflineIndicator, Modal, Badge } from './ui'
+import { PWAInstallButton, OfflineIndicator, SyncQueueModal, Modal, Badge } from './ui'
 import { LangToggle } from './i18n'
 
 const MODULE_DEFS = {
@@ -130,6 +130,7 @@ export default function App() {
   })
   const [moreOpen, setMoreOpen] = useState(false)
   const [notifOpen, setNotifOpen] = useState(false)
+  const [syncOpen, setSyncOpen] = useState(false)
 
   const toggleCollapsed = () => {
     setCollapsed(prev => {
@@ -297,6 +298,29 @@ export default function App() {
               </div>
 
               <div className="flex items-center gap-1.5 shrink-0">
+                {(!isOnline || isSlowNetwork || pendingSyncCount > 0) && (
+                  <button
+                    type="button"
+                    onClick={() => setSyncOpen(true)}
+                    aria-label={t('Foleni ya Mtandao', 'Network & Sync Queue')}
+                    className={`h-9 px-2.5 rounded-xl flex items-center gap-1 text-[11px] font-bold border transition ${
+                      !isOnline
+                        ? 'bg-amber-500/20 border-amber-300/40 text-amber-200'
+                        : pendingSyncCount > 0
+                          ? 'bg-emerald-500/20 border-emerald-300/40 text-emerald-200'
+                          : 'bg-sky-500/20 border-sky-300/40 text-sky-200'
+                    }`}
+                  >
+                    {!isOnline ? <WifiOff size={13} /> : <Gauge size={13} />}
+                    <span>
+                      {pendingSyncCount > 0
+                        ? pendingSyncCount
+                        : !isOnline
+                          ? t('Nje', 'Offline')
+                          : String(device.connectionType || '2G').toUpperCase()}
+                    </span>
+                  </button>
+                )}
                 <button
                   type="button"
                   onClick={() => setNotifOpen(true)}
@@ -329,7 +353,24 @@ export default function App() {
                 </h1>
               </div>
 
-              <div className="flex items-center gap-1 shrink-0">
+              <div className="flex items-center gap-1.5 shrink-0">
+                {(!isOnline || isSlowNetwork || pendingSyncCount > 0) && (
+                  <button
+                    type="button"
+                    onClick={() => setSyncOpen(true)}
+                    aria-label={t('Foleni ya Mtandao', 'Network & Sync Queue')}
+                    className={`h-9 px-2 rounded-xl flex items-center gap-1 text-[11px] font-bold border transition ${
+                      !isOnline
+                        ? 'bg-amber-500/20 border-amber-300/40 text-amber-200'
+                        : pendingSyncCount > 0
+                          ? 'bg-emerald-500/20 border-emerald-300/40 text-emerald-200'
+                          : 'bg-sky-500/20 border-sky-300/40 text-sky-200'
+                    }`}
+                  >
+                    {!isOnline ? <WifiOff size={13} /> : <Gauge size={13} />}
+                    {pendingSyncCount > 0 && <span>{pendingSyncCount}</span>}
+                  </button>
+                )}
                 {currentModule?.quickAdd ? (
                   <button
                     type="button"
@@ -756,9 +797,19 @@ export default function App() {
                   {t('Hakuna arifa mpya kwa sasa.', 'No urgent alerts right now.')}
                 </div>
               )}
+
+              <button
+                type="button"
+                onClick={() => { setNotifOpen(false); setSyncOpen(true) }}
+                className="btn-secondary w-full justify-center text-xs"
+              >
+                <Gauge size={14} /> {t('Fungua Foleni ya Mtandao & Data Kidogo', 'Open Sync Queue & Low Data Settings')}
+              </button>
             </div>
           </Modal>
         )}
+
+        <SyncQueueModal open={syncOpen} onClose={() => setSyncOpen(false)} />
       </div>
     </div>
   )

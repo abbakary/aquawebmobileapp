@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import {
   Fuel as FuelIcon,
   Plus,
@@ -49,9 +49,11 @@ import {
 } from 'recharts'
 import { useS, tot, supFuelDebt, supMaintDebt, supAccountStatement, supPurchaseStatus } from '../store'
 import { Modal, Field, Badge, DetailModal, ViewBtn, f, tzs, fmtT } from '../ui'
+import { useDevice } from '../device'
 
 export default function Fuel() {
   const { s, a, t, spLabel } = useS()
+  const { lowBandwidthMode } = useDevice()
 
   // Active view: 'issue' | 'accounts' | 'stock' | 'purchases' | 'settlements' | 'reports'
   const [activeView, setActiveView] = useState('issue')
@@ -61,6 +63,16 @@ export default function Fuel() {
   // Modals
   const [issueStep, setIssueStep] = useState(1) // 1: Details, 2: Payment, 3: Receipt
   const [issueModalOpen, setIssueModalOpen] = useState(false)
+
+  useEffect(() => {
+    const onQuickAdd = e => {
+      if (e.detail?.tab !== 'fuel') return
+      setIssueStep(1)
+      setIssueModalOpen(true)
+    }
+    window.addEventListener('aquacatch:quick-add', onQuickAdd)
+    return () => window.removeEventListener('aquacatch:quick-add', onQuickAdd)
+  }, [])
   const [receiptRecord, setReceiptRecord] = useState(null)
   const [createAccountModal, setCreateAccountModal] = useState(false)
   const [selectedFisherman, setSelectedFisherman] = useState(null)
@@ -341,13 +353,89 @@ export default function Fuel() {
 
   return (
     <div className="page-body">
-      {/* 1. PROFESSIONAL HERO DOCK BANNER WITH INTEGRATED LIVE STATS & QUICK CTAs */}
-      <div className="relative rounded-2xl overflow-hidden bg-slate-950 border border-slate-700/60 shadow-md">
-        <img
-          src="/photos/scale-dock.png"
-          alt="Fishing Boat Dock & Fuel Dispensary"
-          className="w-full h-44 sm:h-48 object-cover object-center"
-        />
+      {/* 1. MOBILE DEEP-NAVY FUEL SUMMARY & QUICK ACTIONS (< md) */}
+      <div className="md:hidden rounded-2xl bg-gradient-to-br from-[#052d56] to-[#0b3a8c] text-white p-4 shadow-md flex flex-col gap-3">
+        <div className="flex items-start justify-between gap-2">
+          <div>
+            <span className="text-[10px] font-bold uppercase tracking-wider text-sky-300 block">
+              {t('KITUO CHA MAFUTA · MWALO', 'DOCK DISPENSARY')}
+            </span>
+            <h2 className="text-base font-extrabold text-white m-0 mt-0.5">
+              {t('Mafuta & Mikopo ya Wavuvi', 'Fishing Fuel & Credit')}
+            </h2>
+          </div>
+          <span className="px-2 py-0.5 rounded-full bg-emerald-500/25 border border-emerald-400/40 text-emerald-200 text-[10px] font-bold shrink-0">
+            {t('Pampu Hai', 'Pumps Live')}
+          </span>
+        </div>
+
+        <div className="grid grid-cols-3 gap-2 text-xs">
+          <div className="rounded-xl bg-white/10 p-2 border border-white/10">
+            <span className="text-[10px] text-amber-300 font-semibold block">{t('Petroli', 'Petrol')}</span>
+            <b className="font-mono text-xs text-white block">{f(totalPetrolStock)} L</b>
+            <span className="text-[10px] text-sky-200">{petrolPct}%</span>
+          </div>
+          <div className="rounded-xl bg-white/10 p-2 border border-white/10">
+            <span className="text-[10px] text-sky-300 font-semibold block">{t('Dizeli', 'Diesel')}</span>
+            <b className="font-mono text-xs text-white block">{f(totalDieselStock)} L</b>
+            <span className="text-[10px] text-sky-200">{dieselPct}%</span>
+          </div>
+          <div className="rounded-xl bg-white/10 p-2 border border-white/10">
+            <span className="text-[10px] text-rose-300 font-semibold block">{t('Deni', 'Debt')}</span>
+            <b className="font-mono text-[11px] text-rose-200 block truncate">{tzs(totalCreditDebt)}</b>
+            <span className="text-[10px] text-sky-200">{suppliers.length} {t('akaunti', 'accts')}</span>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-2">
+          <button
+            type="button"
+            onClick={() => {
+              setIssueStep(1)
+              setIssueModalOpen(true)
+            }}
+            className="min-h-[44px] px-3 py-2 rounded-xl bg-[#18b8b2] hover:bg-[#139c97] text-white font-bold text-xs flex items-center justify-center gap-1.5"
+          >
+            <FuelIcon size={14} /> {t('Toa Mafuta', 'Issue Fuel')}
+          </button>
+          <button
+            type="button"
+            onClick={() => setCreateAccountModal(true)}
+            className="min-h-[44px] px-3 py-2 rounded-xl bg-white/15 hover:bg-white/25 text-white font-bold text-xs flex items-center justify-center gap-1.5"
+          >
+            <UserPlus size={14} /> {t('Sajili Boti', 'Onboard Boat')}
+          </button>
+          <button
+            type="button"
+            onClick={() => setPurchaseModalOpen(true)}
+            className="min-h-[44px] px-3 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white font-semibold text-xs flex items-center justify-center gap-1.5"
+          >
+            <Truck size={14} /> {t('Jaza Tanki', 'Restock')}
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setSettleStep(1)
+              setSettlementModalOpen(true)
+            }}
+            className="min-h-[44px] px-3 py-2 rounded-xl bg-amber-500/90 hover:bg-amber-500 text-white font-bold text-xs flex items-center justify-center gap-1.5"
+          >
+            <ArrowDownRight size={14} /> {t('Kata Samaki', 'Settle Catch')}
+          </button>
+        </div>
+      </div>
+
+      {/* 1B. DESKTOP HERO DOCK BANNER WITH INTEGRATED LIVE STATS & QUICK CTAs */}
+      <div className="hidden md:block relative rounded-2xl overflow-hidden bg-slate-950 border border-slate-700/60 shadow-md min-h-[192px]">
+        {!lowBandwidthMode && (
+          <img
+            src="/photos/scale-dock.png"
+            alt="Fishing Boat Dock & Fuel Dispensary"
+            loading="lazy"
+            decoding="async"
+            className="w-full h-44 sm:h-48 object-cover object-center"
+          />
+        )}
         <div className="absolute inset-0 bg-gradient-to-r from-slate-950/90 via-slate-950/65 to-slate-900/40 p-4 sm:p-5 flex flex-col justify-between">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
             <div>
@@ -431,8 +519,8 @@ export default function Fuel() {
         </div>
       </div>
 
-      {/* 2. REORGANIZED, CRISP NAVIGATION SEGMENTED TABS (Always visible, clean, zero confusion) */}
-      <div className="bg-white rounded-xl border border-slate-200 p-1.5 shadow-sm overflow-x-auto flex items-center gap-1">
+      {/* 2. REORGANIZED, CRISP NAVIGATION SEGMENTED TABS */}
+      <div className="bg-white rounded-xl border border-slate-200 p-1.5 shadow-sm overflow-x-auto no-scrollbar flex items-center gap-1">
         {[
           {
             id: 'issue',
@@ -519,7 +607,7 @@ export default function Fuel() {
                 className="input-field pl-10 text-xs"
               />
             </div>
-            <div className="flex items-center gap-1.5 overflow-x-auto w-full sm:w-auto">
+            <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar w-full sm:w-auto">
               {['All', 'Cash', 'Partial', 'By Fish Delivery', 'End of Season'].map(arr => (
                 <button
                   key={arr}
@@ -546,14 +634,70 @@ export default function Fuel() {
                   setIssueStep(1)
                   setIssueModalOpen(true)
                 }}
-                className="btn-primary text-xs whitespace-nowrap bg-emerald-600 hover:bg-emerald-500 font-bold"
+                className="hidden md:inline-flex btn-primary text-xs whitespace-nowrap bg-emerald-600 hover:bg-emerald-500 font-bold"
               >
                 <Plus size={14} /> + {t('Toa Mafuta', 'Record Fuel Issue')}
               </button>
             </div>
           </div>
 
-          <div className="data-table-wrap">
+          {/* Mobile Daily Fuel Issues Cards (< md) */}
+          <div className="md:hidden flex flex-col gap-2.5">
+            {issues
+              .filter(it => {
+                const sup = suppliers.find(s => s.id === it.supId)
+                const matchQ =
+                  it.no.toLowerCase().includes(search.toLowerCase()) ||
+                  (it.boatReg || '').toLowerCase().includes(search.toLowerCase()) ||
+                  (sup?.name || '').toLowerCase().includes(search.toLowerCase())
+                const matchF = filterType === 'All' || it.arrangement === filterType
+                return matchQ && matchF
+              })
+              .map(item => {
+                const sup = suppliers.find(s => s.id === item.supId)
+                return (
+                  <div
+                    key={item.id}
+                    className="mobile-card flex flex-col gap-2"
+                    onClick={() => {
+                      setReceiptRecord({ ...item, supName: sup?.name, supNo: sup?.no })
+                      setIssueStep(3)
+                      setIssueModalOpen(true)
+                    }}
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <b className="text-sm text-slate-900 block truncate">{sup?.name || item.supId}</b>
+                        <span className="text-[11px] font-mono text-blue-800 block">
+                          {item.no} · {item.boatReg || '-'}
+                        </span>
+                        <span className="text-[11px] text-slate-500">
+                          {item.fuel === 'Petrol' ? t('Petroli', 'Petrol') : t('Dizeli', 'Diesel')} · {f(item.litres)} L · {item.date}
+                        </span>
+                      </div>
+                      <div className="text-right shrink-0">
+                        <b className="font-mono text-sm text-slate-900 block tabular-nums">{tzs(item.total)}</b>
+                        {item.balance > 0 ? (
+                          <span className="text-[11px] font-mono font-bold text-rose-600">
+                            {t('Deni:', 'Due:')} {tzs(item.balance)}
+                          </span>
+                        ) : (
+                          <Badge variant="green">{t('Imelipwa', 'Paid')}</Badge>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between pt-1 border-t border-slate-100 text-xs">
+                      <span className="text-slate-500">{item.arrangement}</span>
+                      <span className="text-blue-700 font-bold inline-flex items-center gap-1">
+                        <Receipt size={13} /> {t('Risiti', 'Receipt')}
+                      </span>
+                    </div>
+                  </div>
+                )
+              })}
+          </div>
+
+          <div className="hidden md:block data-table-wrap">
             <table className="data-table">
               <thead>
                 <tr>
@@ -777,7 +921,7 @@ export default function Fuel() {
                     </div>
 
                     {/* 3 KPI Chips */}
-                    <div className="grid grid-cols-3 gap-2">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                       <div className="p-2.5 bg-red-50/80 border border-red-200 rounded-xl text-center">
                         <span className="text-[10px] uppercase font-bold text-red-700 block">{t('Deni la Mafuta', 'Fuel Debt')}</span>
                         <b className="text-sm sm:text-base font-mono font-bold text-red-700">{tzs(statement.fuelDebt)}</b>
@@ -855,7 +999,11 @@ export default function Fuel() {
               const pct = Math.round(((tank.current || 0) / (tank.capacity || 5000)) * 100)
               const isPetrol = tank.fuel === 'Petrol'
               return (
-                <div key={tank.id} className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm flex flex-col justify-between">
+                <div
+                  key={tank.id}
+                  onClick={() => setViewTank({ ...tank, pct })}
+                  className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm flex flex-col justify-between cursor-pointer hover:border-blue-300 transition"
+                >
                   <div>
                     <div className="flex items-start justify-between">
                       <div>
@@ -900,7 +1048,7 @@ export default function Fuel() {
           </div>
 
           {/* Tanks Table Breakdown */}
-          <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
+          <div className="hidden md:block bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
             <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider mb-2">{t('Stoo ya Mafuta kwa Eneo & Thamani', 'Fuel Stock by Location & Pump Valuation')}</h4>
             <div className="data-table-wrap">
               <table className="data-table">
@@ -977,7 +1125,28 @@ export default function Fuel() {
             </button>
           </div>
 
-          <div className="data-table-wrap">
+          {/* Mobile Fuel Purchases (< md) */}
+          <div className="md:hidden flex flex-col gap-2.5">
+            {purchases.map(p => (
+              <div key={p.id} className="mobile-card flex items-center justify-between gap-2.5" onClick={() => setViewFuelPurchase(p)}>
+                <div className="min-w-0">
+                  <b className="text-sm text-slate-900 block truncate">{p.supName || 'Lake Oil Ltd'}</b>
+                  <span className="text-[11px] font-mono text-blue-800 block">{p.no} · {p.date}</span>
+                  <span className="text-[11px] text-slate-500">
+                    {p.fuel === 'Petrol' ? t('Petroli', 'Petrol') : t('Dizeli', 'Diesel')} · {f(p.litres)} L
+                  </span>
+                </div>
+                <div className="text-right shrink-0">
+                  <b className="font-mono text-sm text-slate-900 block tabular-nums">{tzs(p.total)}</b>
+                  <Badge variant={p.status === 'Paid' ? 'green' : p.status === 'Partial' ? 'amber' : 'blue'}>
+                    {p.status === 'Paid' ? t('Imelipwa', 'Paid') : p.status === 'Partial' ? t('Nusu', 'Partial') : t('Inasubiri', 'Pending')}
+                  </Badge>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="hidden md:block data-table-wrap">
             <table className="data-table">
               <thead>
                 <tr>
@@ -1041,7 +1210,33 @@ export default function Fuel() {
             </button>
           </div>
 
-          <div className="data-table-wrap">
+          {/* Mobile Settlements (< md) */}
+          <div className="md:hidden flex flex-col gap-2.5">
+            {settlements.map(item => {
+              const sup = suppliers.find(x => x.id === item.supId)
+              return (
+                <div
+                  key={item.id}
+                  className="mobile-card flex items-center justify-between gap-2.5"
+                  onClick={() => setViewSettlement({ ...item, supName: sup?.name || item.supId })}
+                >
+                  <div className="min-w-0">
+                    <b className="text-sm text-slate-900 block truncate">{sup?.name || item.supId}</b>
+                    <span className="text-[11px] font-mono text-blue-800 block">{item.no} · {item.date}</span>
+                    <span className="text-[11px] text-rose-600 font-mono">
+                      {t('Deni:', 'Deducted:')} -{tzs(item.fuelDeducted || 0)}
+                    </span>
+                  </div>
+                  <div className="text-right shrink-0">
+                    <b className="font-mono text-sm text-emerald-700 block tabular-nums">{tzs(item.netPayable)}</b>
+                    <Badge variant="blue">{item.method}</Badge>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+
+          <div className="hidden md:block data-table-wrap">
             <table className="data-table">
               <thead>
                 <tr>
@@ -1384,7 +1579,7 @@ export default function Fuel() {
               {/* Payment Arrangement Selector */}
               <div>
                 <span className="text-xs font-bold text-slate-800 block mb-1.5">{t('Utaratibu wa Malipo', 'Payment Arrangement')}</span>
-                <div className="grid grid-cols-4 gap-2">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                   {[
                     { id: 'Cash', label: t('Taslimu', 'Cash') },
                     { id: 'Partial', label: t('Nusu', 'Partial') },
@@ -1428,7 +1623,7 @@ export default function Fuel() {
                 <b className="text-base font-mono font-bold text-slate-900">{tzs(issueTotal)}</b>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <Field label={t('Kiasi Kinacholipwa Sasa (TZS) *', 'Amount Paid Now (TZS) *')}>
                   <input
                     type="number"
@@ -1595,7 +1790,7 @@ export default function Fuel() {
               <span className="text-xs font-bold text-slate-900 uppercase tracking-wider block">
                 {t('1. Taarifa za Nahodha & Mmiliki wa Akaunti', '1. Captain & Account Holder Information')}
               </span>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <Field label={t('Jina Kamili la Mvuvi / Nahodha *', 'Fisherman / Captain Full Name *')}>
                   <input
                     type="text"
@@ -1616,7 +1811,7 @@ export default function Fuel() {
                 </Field>
               </div>
 
-              <div className="grid grid-cols-3 gap-2.5">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
                 <Field label={t('Kitambulisho cha Taifa (NIDA)', 'National ID (NIDA)')}>
                   <input
                     type="text"
@@ -1654,7 +1849,7 @@ export default function Fuel() {
               <span className="text-xs font-bold text-slate-900 uppercase tracking-wider block">
                 {t('2. Taarifa za Boti ya Uvuvi', '2. Registered Fishing Vessel (Boat) Specifications')}
               </span>
-              <div className="grid grid-cols-2 gap-2.5">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                 <Field label={t('Jina la Boti *', 'Boat Name *')}>
                   <input
                     type="text"
@@ -1675,7 +1870,7 @@ export default function Fuel() {
                 </Field>
               </div>
 
-              <div className="grid grid-cols-2 gap-2.5">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                 <Field label={t('Aina ya Injini', 'Engine Specifications')}>
                   <input
                     type="text"
@@ -1831,7 +2026,7 @@ export default function Fuel() {
               </div>
 
               {/* 3 Metric Chips */}
-              <div className="grid grid-cols-3 gap-2.5">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
                 <div className="p-3 bg-red-50/80 border border-red-200 rounded-xl text-center">
                   <span className="text-[10px] uppercase font-bold text-red-700 block">{t('Deni la Mafuta', 'Fuel Debt')}</span>
                   <b className="text-base font-mono font-bold text-red-700">{tzs(statement.fuelDebt)}</b>
@@ -1852,7 +2047,7 @@ export default function Fuel() {
               </div>
 
               {/* Navigation Tabs */}
-              <div className="border-b border-slate-200 flex items-center gap-3 overflow-x-auto">
+              <div className="border-b border-slate-200 flex items-center gap-3 overflow-x-auto no-scrollbar">
                 {[
                   { id: 'crew', label: `${t('Mabaharia wa Boti', 'Boat Crew Members')} (${crewList.length})` },
                   { id: 'activity', label: t('Miamala ya Akaunti', 'Account Activity') },
@@ -1922,139 +2117,217 @@ export default function Fuel() {
 
               {/* TAB: ACCOUNT ACTIVITY */}
               {fishermanTab === 'activity' && (
-                <div className="data-table-wrap max-h-56">
-                  <table className="data-table">
-                    <thead>
-                      <tr>
-                        <th>{t('Tarehe', 'Date')}</th>
-                        <th>{t('Maelezo', 'Description')}</th>
-                        <th>{t('Deni (TZS)', 'Debit (TZS)')}</th>
-                        <th>{t('Malipo (TZS)', 'Credit (TZS)')}</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {supIssues.map(it => (
-                        <tr key={it.id}>
-                          <td className="font-mono text-xs">{it.date}</td>
-                          <td>{t('Mafuta', 'Fuel Issue')} ({it.litres} L {it.fuel})</td>
-                          <td className="font-mono text-red-600 font-bold">{tzs(it.total)}</td>
-                          <td className="font-mono text-slate-400">-</td>
+                <>
+                  <div className="md:hidden space-y-2 max-h-56 overflow-y-auto">
+                    {supIssues.map(it => (
+                      <div key={it.id} className="p-2.5 rounded-xl border border-slate-200 bg-white flex justify-between items-center text-xs">
+                        <div>
+                          <b className="text-slate-900 block">{t('Mafuta', 'Fuel Issue')} ({it.litres} L {it.fuel})</b>
+                          <span className="font-mono text-slate-400">{it.date}</span>
+                        </div>
+                        <b className="font-mono text-red-600">-{tzs(it.total)}</b>
+                      </div>
+                    ))}
+                    {(s.fuelPayments || []).filter(p => p.supId === selectedFisherman.id).map(p => (
+                      <div key={p.id} className="p-2.5 rounded-xl border border-slate-200 bg-white flex justify-between items-center text-xs">
+                        <div>
+                          <b className="text-slate-900 block">{t('Malipo ya Taslimu', 'Cash Payment')} ({p.m})</b>
+                          <span className="font-mono text-slate-400">{p.date}</span>
+                        </div>
+                        <b className="font-mono text-emerald-700">+{tzs(p.amt)}</b>
+                      </div>
+                    ))}
+                    {supSettlements.map(st => (
+                      <div key={st.id} className="p-2.5 rounded-xl border border-slate-200 bg-white flex justify-between items-center text-xs">
+                        <div>
+                          <b className="text-slate-900 block">{t('Makato ya Samaki', 'Catch Settlement')} ({st.no})</b>
+                          <span className="font-mono text-slate-400">{st.date}</span>
+                        </div>
+                        <b className="font-mono text-emerald-700">+{tzs(st.fuelDeducted)}</b>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="hidden md:block data-table-wrap max-h-56">
+                    <table className="data-table">
+                      <thead>
+                        <tr>
+                          <th>{t('Tarehe', 'Date')}</th>
+                          <th>{t('Maelezo', 'Description')}</th>
+                          <th>{t('Deni (TZS)', 'Debit (TZS)')}</th>
+                          <th>{t('Malipo (TZS)', 'Credit (TZS)')}</th>
                         </tr>
-                      ))}
-                      {(s.fuelPayments || []).filter(p => p.supId === selectedFisherman.id).map(p => (
-                        <tr key={p.id}>
-                          <td className="font-mono text-xs">{p.date}</td>
-                          <td>{t('Malipo ya Taslimu', 'Cash Payment')} ({p.m})</td>
-                          <td className="font-mono text-slate-400">-</td>
-                          <td className="font-mono text-emerald-700 font-bold">{tzs(p.amt)}</td>
-                        </tr>
-                      ))}
-                      {supSettlements.map(st => (
-                        <tr key={st.id}>
-                          <td className="font-mono text-xs">{st.date}</td>
-                          <td>{t('Makato ya Samaki', 'Catch Settlement Deduction')} ({st.no})</td>
-                          <td className="font-mono text-slate-400">-</td>
-                          <td className="font-mono text-emerald-700 font-bold">{tzs(st.fuelDeducted)}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                      </thead>
+                      <tbody>
+                        {supIssues.map(it => (
+                          <tr key={it.id}>
+                            <td className="font-mono text-xs">{it.date}</td>
+                            <td>{t('Mafuta', 'Fuel Issue')} ({it.litres} L {it.fuel})</td>
+                            <td className="font-mono text-red-600 font-bold">{tzs(it.total)}</td>
+                            <td className="font-mono text-slate-400">-</td>
+                          </tr>
+                        ))}
+                        {(s.fuelPayments || []).filter(p => p.supId === selectedFisherman.id).map(p => (
+                          <tr key={p.id}>
+                            <td className="font-mono text-xs">{p.date}</td>
+                            <td>{t('Malipo ya Taslimu', 'Cash Payment')} ({p.m})</td>
+                            <td className="font-mono text-slate-400">-</td>
+                            <td className="font-mono text-emerald-700 font-bold">{tzs(p.amt)}</td>
+                          </tr>
+                        ))}
+                        {supSettlements.map(st => (
+                          <tr key={st.id}>
+                            <td className="font-mono text-xs">{st.date}</td>
+                            <td>{t('Makato ya Samaki', 'Catch Settlement Deduction')} ({st.no})</td>
+                            <td className="font-mono text-slate-400">-</td>
+                            <td className="font-mono text-emerald-700 font-bold">{tzs(st.fuelDeducted)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </>
               )}
 
               {/* TAB: FUEL ISSUES HISTORY */}
               {fishermanTab === 'fuel' && (
-                <div className="data-table-wrap max-h-56">
-                  <table className="data-table">
-                    <thead>
-                      <tr>
-                        <th>{t('Risiti #', 'Receipt #')}</th>
-                        <th>{t('Tarehe', 'Date')}</th>
-                        <th>{t('Lita', 'Litres')}</th>
-                        <th>{t('Jumla', 'Total')}</th>
-                        <th>{t('Imelipwa', 'Paid')}</th>
-                        <th>{t('Utaratibu', 'Arrangement')}</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {supIssues.map(it => (
-                        <tr key={it.id}>
-                          <td className="font-mono font-bold text-blue-900">{it.no}</td>
-                          <td>{it.date}</td>
-                          <td className="font-mono">{it.litres} L</td>
-                          <td className="font-mono font-bold">{tzs(it.total)}</td>
-                          <td className="font-mono text-emerald-700">{tzs(it.paid)}</td>
-                          <td><Badge variant="blue">{it.arrangement}</Badge></td>
+                <>
+                  <div className="md:hidden space-y-2 max-h-56 overflow-y-auto">
+                    {supIssues.map(it => (
+                      <div key={it.id} className="p-2.5 rounded-xl border border-slate-200 bg-white flex justify-between items-center text-xs">
+                        <div>
+                          <b className="font-mono text-blue-900 block">{it.no} · {it.litres} L</b>
+                          <span className="text-slate-500">{it.date} · {it.arrangement}</span>
+                        </div>
+                        <div className="text-right">
+                          <b className="font-mono text-slate-900 block">{tzs(it.total)}</b>
+                          <span className="font-mono text-emerald-700">{t('Lipwa:', 'Paid:')} {tzs(it.paid)}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="hidden md:block data-table-wrap max-h-56">
+                    <table className="data-table">
+                      <thead>
+                        <tr>
+                          <th>{t('Risiti #', 'Receipt #')}</th>
+                          <th>{t('Tarehe', 'Date')}</th>
+                          <th>{t('Lita', 'Litres')}</th>
+                          <th>{t('Jumla', 'Total')}</th>
+                          <th>{t('Imelipwa', 'Paid')}</th>
+                          <th>{t('Utaratibu', 'Arrangement')}</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                      </thead>
+                      <tbody>
+                        {supIssues.map(it => (
+                          <tr key={it.id}>
+                            <td className="font-mono font-bold text-blue-900">{it.no}</td>
+                            <td>{it.date}</td>
+                            <td className="font-mono">{it.litres} L</td>
+                            <td className="font-mono font-bold">{tzs(it.total)}</td>
+                            <td className="font-mono text-emerald-700">{tzs(it.paid)}</td>
+                            <td><Badge variant="blue">{it.arrangement}</Badge></td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </>
               )}
 
               {/* TAB: FISH CATCHES */}
               {fishermanTab === 'fish' && (
-                <div className="data-table-wrap max-h-56">
-                  <table className="data-table">
-                    <thead>
-                      <tr>
-                        <th>{t('Mzigo #', 'Batch #')}</th>
-                        <th>{t('Tarehe', 'Date')}</th>
-                        <th>{t('Aina ya Samaki', 'Species')}</th>
-                        <th>{t('Uzito', 'Weight')}</th>
-                        <th>{t('Thamani', 'Purchase Value')}</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {supBatches.map(b => (
-                        <tr key={b.id}>
-                          <td className="font-mono font-bold text-blue-900">{b.no}</td>
-                          <td>{b.date}</td>
-                          <td>{spLabel(b.sp)}</td>
-                          <td className="font-mono font-bold">{f(b.kg)} kg</td>
-                          <td className="font-mono text-slate-900 font-bold">{tzs(b.kg * b.price)}</td>
+                <>
+                  <div className="md:hidden space-y-2 max-h-56 overflow-y-auto">
+                    {supBatches.map(b => (
+                      <div key={b.id} className="p-2.5 rounded-xl border border-slate-200 bg-white flex justify-between items-center text-xs">
+                        <div>
+                          <b className="text-slate-900 block">{spLabel(b.sp)} · {f(b.kg)} kg</b>
+                          <span className="font-mono text-slate-500">{b.no} · {b.date}</span>
+                        </div>
+                        <b className="font-mono text-slate-900">{tzs(b.kg * b.price)}</b>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="hidden md:block data-table-wrap max-h-56">
+                    <table className="data-table">
+                      <thead>
+                        <tr>
+                          <th>{t('Mzigo #', 'Batch #')}</th>
+                          <th>{t('Tarehe', 'Date')}</th>
+                          <th>{t('Aina ya Samaki', 'Species')}</th>
+                          <th>{t('Uzito', 'Weight')}</th>
+                          <th>{t('Thamani', 'Purchase Value')}</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                      </thead>
+                      <tbody>
+                        {supBatches.map(b => (
+                          <tr key={b.id}>
+                            <td className="font-mono font-bold text-blue-900">{b.no}</td>
+                            <td>{b.date}</td>
+                            <td>{spLabel(b.sp)}</td>
+                            <td className="font-mono font-bold">{f(b.kg)} kg</td>
+                            <td className="font-mono text-slate-900 font-bold">{tzs(b.kg * b.price)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </>
               )}
 
               {/* TAB: SETTLEMENTS */}
               {fishermanTab === 'settlements' && (
-                <div className="data-table-wrap max-h-56">
-                  <table className="data-table">
-                    <thead>
-                      <tr>
-                        <th>{t('Makato #', 'Settlement #')}</th>
-                        <th>{t('Tarehe', 'Date')}</th>
-                        <th>{t('Thamani ya Samaki', 'Fish Value')}</th>
-                        <th>{t('Mafuta Yaliyokatwa', 'Fuel Deducted')}</th>
-                        <th>{t('Malipo Halisi', 'Net Paid')}</th>
-                        <th>{t('Njia', 'Method')}</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {supSettlements.map(st => (
-                        <tr key={st.id}>
-                          <td className="font-mono font-bold text-blue-900">{st.no}</td>
-                          <td>{st.date}</td>
-                          <td className="font-mono">{tzs(st.fishTotal)}</td>
-                          <td className="font-mono text-red-600 font-bold">-{tzs(st.fuelDeducted)}</td>
-                          <td className="font-mono text-emerald-700 font-bold">{tzs(st.netPayable)}</td>
-                          <td><Badge variant="blue">{st.method}</Badge></td>
-                        </tr>
-                      ))}
-                      {supSettlements.length === 0 && (
+                <>
+                  <div className="md:hidden space-y-2 max-h-56 overflow-y-auto">
+                    {supSettlements.map(st => (
+                      <div key={st.id} className="p-2.5 rounded-xl border border-slate-200 bg-white flex justify-between items-center text-xs">
+                        <div>
+                          <b className="font-mono text-blue-900 block">{st.no} · {st.method}</b>
+                          <span className="text-slate-500">{st.date} · {t('Mafuta:', 'Fuel:')} -{tzs(st.fuelDeducted)}</span>
+                        </div>
+                        <b className="font-mono text-emerald-700">{tzs(st.netPayable)}</b>
+                      </div>
+                    ))}
+                    {supSettlements.length === 0 && (
+                      <div className="text-center py-4 text-slate-400">
+                        {t('Hakuna makato ya samaki yaliyorekodiwa bado.', 'No cross-settlement vouchers recorded for this fisherman yet.')}
+                      </div>
+                    )}
+                  </div>
+                  <div className="hidden md:block data-table-wrap max-h-56">
+                    <table className="data-table">
+                      <thead>
                         <tr>
-                          <td colSpan={6} className="text-center py-4 text-slate-400">
-                            {t('Hakuna makato ya samaki yaliyorekodiwa bado.', 'No cross-settlement vouchers recorded for this fisherman yet.')}
-                          </td>
+                          <th>{t('Makato #', 'Settlement #')}</th>
+                          <th>{t('Tarehe', 'Date')}</th>
+                          <th>{t('Thamani ya Samaki', 'Fish Value')}</th>
+                          <th>{t('Mafuta Yaliyokatwa', 'Fuel Deducted')}</th>
+                          <th>{t('Malipo Halisi', 'Net Paid')}</th>
+                          <th>{t('Njia', 'Method')}</th>
                         </tr>
-                      )}
-                    </tbody>
-                  </table>
-                </div>
+                      </thead>
+                      <tbody>
+                        {supSettlements.map(st => (
+                          <tr key={st.id}>
+                            <td className="font-mono font-bold text-blue-900">{st.no}</td>
+                            <td>{st.date}</td>
+                            <td className="font-mono">{tzs(st.fishTotal)}</td>
+                            <td className="font-mono text-red-600 font-bold">-{tzs(st.fuelDeducted)}</td>
+                            <td className="font-mono text-emerald-700 font-bold">{tzs(st.netPayable)}</td>
+                            <td><Badge variant="blue">{st.method}</Badge></td>
+                          </tr>
+                        ))}
+                        {supSettlements.length === 0 && (
+                          <tr>
+                            <td colSpan={6} className="text-center py-4 text-slate-400">
+                              {t('Hakuna makato ya samaki yaliyorekodiwa bado.', 'No cross-settlement vouchers recorded for this fisherman yet.')}
+                            </td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </>
               )}
 
               <div className="flex justify-between items-center pt-2 border-t border-slate-100">
@@ -2107,7 +2380,7 @@ export default function Fuel() {
               </select>
             </Field>
 
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               <Field label={t('Namba ya Simu (M-Pesa)', 'Phone Number (M-Pesa)')}>
                 <input
                   type="tel"
@@ -2179,7 +2452,7 @@ export default function Fuel() {
               </select>
             </Field>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <Field label={t('Tarehe ya Manunuzi', 'Purchase Date')}>
                 <input
                   type="text"
@@ -2210,7 +2483,7 @@ export default function Fuel() {
               </Field>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <Field label={t('Kiasi (Lita) *', 'Quantity (Litres) *')}>
                 <input
                   type="number"
@@ -2414,7 +2687,28 @@ export default function Fuel() {
               <Badge variant="amber">9.5% {t('Faida Halisi', 'Net Margin')}</Badge>
             </div>
 
-            <div className="data-table-wrap">
+            <div className="md:hidden space-y-2">
+              <div className="mobile-card flex items-center justify-between">
+                <div>
+                  <Badge variant="amber">{t('Petroli', 'Petrol')}</Badge>
+                  <span className="text-[11px] text-slate-500 block mt-1">7,800 L · +TZS 350/L</span>
+                </div>
+                <b className="font-mono text-emerald-700">TZS 2,730,000</b>
+              </div>
+              <div className="mobile-card flex items-center justify-between">
+                <div>
+                  <Badge variant="blue">{t('Dizeli', 'Diesel')}</Badge>
+                  <span className="text-[11px] text-slate-500 block mt-1">4,700 L · +TZS 400/L</span>
+                </div>
+                <b className="font-mono text-emerald-700">TZS 1,880,000</b>
+              </div>
+              <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 flex items-center justify-between font-bold">
+                <span className="text-emerald-950">{t('Jumla ya Faida Halisi', 'Total Net Profit')}</span>
+                <span className="font-mono text-emerald-800">TZS 4,610,000</span>
+              </div>
+            </div>
+
+            <div className="hidden md:block data-table-wrap">
               <table className="data-table">
                 <thead>
                   <tr>

@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import {
   Anchor,
   Users,
@@ -36,6 +36,14 @@ export default function Crew() {
   const [viewOpen, setViewOpen] = useState(false);
   const [boatOpen, setBoatOpen] = useState(false)
   const [settleKibalua, setSettleKibalua] = useState(null)
+
+  useEffect(() => {
+    const onQuickAdd = e => {
+      if (e.detail?.tab === 'crew') setAssignOpen(true)
+    }
+    window.addEventListener('aquacatch:quick-add', onQuickAdd)
+    return () => window.removeEventListener('aquacatch:quick-add', onQuickAdd)
+  }, [])
 
   // Form states
   const [assignForm, setAssignForm] = useState({
@@ -189,7 +197,7 @@ export default function Crew() {
   return (
     <div className="page-body">
       {/* Central Hub Navigation Bar: One Point of Control */}
-      <div className="flex flex-wrap items-center justify-between gap-2 p-2.5 bg-slate-900 text-white rounded-xl shadow-sm mb-1">
+      <div className="hidden md:flex flex-wrap items-center justify-between gap-2 p-2.5 bg-slate-900 text-white rounded-xl shadow-sm mb-1">
         <div className="flex items-center gap-2">
           <span className="text-xs font-bold text-blue-400 uppercase tracking-wider flex items-center gap-1.5 pl-1">
             <Anchor size={14} /> {t('Kituo Kikuu:', 'Control Hub:')}
@@ -235,11 +243,14 @@ export default function Crew() {
             )}
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="grid grid-cols-2 md:flex items-center gap-2">
           <button onClick={() => setBoatOpen(true)} className="btn-secondary text-xs">
-            <Ship size={14} /> {t('Sajili Boti Mpya', 'Register Boat')}
+            <Ship size={14} /> {t('Sajili Boti', 'Register Boat')}
           </button>
-          <button onClick={() => setAssignOpen(true)} className="btn-primary text-xs">
+          <button onClick={() => setKibaluaOpen(true)} className="btn-secondary md:hidden text-xs">
+            <Clock size={14} /> {t('Kibalua Mpya', 'New Kibalua')}
+          </button>
+          <button onClick={() => setAssignOpen(true)} className="hidden md:inline-flex btn-primary text-xs">
             <Plus size={14} /> {t('Pangia Baharia Kazi', 'Assign Crew Member')}
           </button>
         </div>
@@ -293,10 +304,10 @@ export default function Crew() {
       </div>
 
       {/* Tabs */}
-      <div className="flex border-b border-slate-200 gap-6 text-sm font-medium">
+      <div className="flex border-b border-slate-200 gap-4 sm:gap-6 text-sm font-medium overflow-x-auto no-scrollbar">
         <button
           onClick={() => setTab('company')}
-          className={`pb-2.5 px-1 flex items-center gap-2 border-b-2 transition-colors ${
+          className={`pb-2.5 px-1 flex items-center gap-2 border-b-2 transition-colors whitespace-nowrap shrink-0 ${
             tab === 'company'
               ? 'border-blue-600 text-blue-600 font-semibold'
               : 'border-transparent text-slate-500 hover:text-slate-800'
@@ -310,7 +321,7 @@ export default function Crew() {
 
         <button
           onClick={() => setTab('independent')}
-          className={`pb-2.5 px-1 flex items-center gap-2 border-b-2 transition-colors ${
+          className={`pb-2.5 px-1 flex items-center gap-2 border-b-2 transition-colors whitespace-nowrap shrink-0 ${
             tab === 'independent'
               ? 'border-blue-600 text-blue-600 font-semibold'
               : 'border-transparent text-slate-500 hover:text-slate-800'
@@ -324,7 +335,7 @@ export default function Crew() {
 
         <button
           onClick={() => setTab('boats')}
-          className={`pb-2.5 px-1 flex items-center gap-2 border-b-2 transition-colors ${
+          className={`pb-2.5 px-1 flex items-center gap-2 border-b-2 transition-colors whitespace-nowrap shrink-0 ${
             tab === 'boats'
               ? 'border-blue-600 text-blue-600 font-semibold'
               : 'border-transparent text-slate-500 hover:text-slate-800'
@@ -338,7 +349,7 @@ export default function Crew() {
 
         <button
           onClick={() => setTab('financials')}
-          className={`pb-2.5 px-1 flex items-center gap-2 border-b-2 transition-colors ${
+          className={`pb-2.5 px-1 flex items-center gap-2 border-b-2 transition-colors whitespace-nowrap shrink-0 ${
             tab === 'financials'
               ? 'border-blue-600 text-blue-600 font-semibold'
               : 'border-transparent text-slate-500 hover:text-slate-800'
@@ -352,7 +363,7 @@ export default function Crew() {
       {tab === 'company' && (
         <div className="flex flex-col gap-4">
           {/* Boat selector pill bar */}
-          <div className="flex items-center gap-2 overflow-x-auto pb-1">
+          <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1">
             <button
               onClick={() => setSelectedBoatId('')}
               className={`px-3 py-1.5 rounded-lg text-xs font-medium shrink-0 transition-colors ${
@@ -383,7 +394,7 @@ export default function Crew() {
           </div>
 
           {/* Search bar & Action */}
-          <div className="flex items-center justify-between gap-3">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
             <div className="relative flex-1">
               <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
               <input
@@ -394,7 +405,7 @@ export default function Crew() {
                 className="input-field pl-10 text-xs"
               />
             </div>
-            <button onClick={() => setKibaluaOpen(true)} className="btn-secondary text-xs shrink-0">
+            <button onClick={() => setKibaluaOpen(true)} className="hidden md:inline-flex btn-secondary text-xs shrink-0">
               <Clock size={14} /> {t('Sajili Kibalua Mpya', 'New Kibalua Engagement')}
             </button>
           </div>
@@ -407,7 +418,43 @@ export default function Crew() {
               </h3>
               <span className="text-xs text-slate-400 font-mono">{filteredAssignments.length} {t('walioorodheshwa', 'listed')}</span>
             </div>
-            <div className="data-table-wrap border-0">
+            {/* Mobile Permanent Crew Cards (< md) */}
+            <div className="md:hidden p-3 flex flex-col gap-2.5 bg-slate-50/50">
+              {filteredAssignments.length === 0 ? (
+                <div className="text-center py-6 text-slate-400 text-xs">
+                  {t('Hakuna baharia aliyepangiwa boti hii bado.', 'No permanent crew assigned to this vessel yet.')}
+                </div>
+              ) : (
+                filteredAssignments.map(a => (
+                  <div key={a.id} className="mobile-card flex flex-col gap-2">
+                    <div className="flex items-start justify-between gap-2.5">
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <div className="w-10 h-10 rounded-full bg-blue-50 text-blue-800 font-bold flex items-center justify-center text-xs border border-blue-200 shrink-0">
+                          {a.fishermanName.slice(0, 2).toUpperCase()}
+                        </div>
+                        <div className="min-w-0">
+                          <b className="text-sm text-slate-900 block truncate">{a.fishermanName}</b>
+                          <span className="text-[11px] font-medium text-blue-600 block">
+                            {a.position === 'Captain' ? t('Nahodha (Captain)', 'Captain') : t('Baharia (Crew)', 'Crew Member')}
+                          </span>
+                          <span className="text-[11px] text-slate-500 block truncate">
+                            {a.boatName} · {a.phone || '-'}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="text-right shrink-0">
+                        <Badge variant={a.status === 'Active' ? 'green' : 'neutral'}>{a.status}</Badge>
+                        <b className={`font-mono text-xs block mt-1 ${a.balance > 0 ? 'text-rose-600' : 'text-emerald-700'}`}>
+                          {tzs(a.balance || 0)}
+                        </b>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+
+            <div className="hidden md:block data-table-wrap border-0">
               <table className="data-table">
                 <thead>
                   <tr>
@@ -486,7 +533,54 @@ export default function Crew() {
               </h3>
               <span className="text-xs text-amber-700 font-mono">{filteredKibalua.length} {t('rekodi', 'records')}</span>
             </div>
-            <div className="data-table-wrap border-0">
+            {/* Mobile Kibalua Cards (< md) */}
+            <div className="md:hidden p-3 flex flex-col gap-2.5 bg-slate-50/50">
+              {filteredKibalua.length === 0 ? (
+                <div className="text-center py-6 text-slate-400 text-xs">
+                  {t('Hakuna kibarua hai kwa sasa.', 'No casual kibalua engagements active.')}
+                </div>
+              ) : (
+                filteredKibalua.map(k => {
+                  const netRem = k.remainingPayable || (k.dailyRate * k.durationDays - (k.advancePaid || 0))
+                  return (
+                    <div key={k.id} className="mobile-card flex flex-col gap-2">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0">
+                          <b className="text-sm text-slate-900 block truncate">{k.fishermanName}</b>
+                          <span className="text-[11px] font-mono text-slate-500 block">
+                            {k.no || 'KIB-' + k.id.slice(0, 6)} · {k.boatName}
+                          </span>
+                          <span className="text-[11px] text-slate-500">
+                            {k.durationDays} {t('siku', 'days')} · {tzs(k.dailyRate)}/{t('siku', 'day')}
+                          </span>
+                        </div>
+                        <div className="text-right shrink-0">
+                          <b className="font-mono text-sm text-blue-700 block tabular-nums">{tzs(netRem)}</b>
+                          <Badge variant={k.status === 'Active' ? 'amber' : 'neutral'}>{k.status}</Badge>
+                        </div>
+                      </div>
+                      {k.status === 'Active' && (
+                        <button
+                          onClick={() => {
+                            setSettleKibalua(k)
+                            setKibaluaSettleForm({
+                              finalPayment: String(netRem),
+                              method: 'Cash',
+                              notes: 'Kibalua completion settlement'
+                            })
+                          }}
+                          className="btn-primary text-xs bg-[#18b8b2] hover:bg-[#139c97] w-full"
+                        >
+                          <CheckCircle2 size={14} /> {t('Kamilisha Malipo', 'Settle Kibalua')}
+                        </button>
+                      )}
+                    </div>
+                  )
+                })
+              )}
+            </div>
+
+            <div className="hidden md:block data-table-wrap border-0">
               <table className="data-table">
                 <thead>
                   <tr>
@@ -591,7 +685,28 @@ export default function Crew() {
             </div>
           </div>
 
-          <div className="data-table-wrap">
+          {/* Mobile Independent Fishers (< md) */}
+          <div className="md:hidden flex flex-col gap-2.5">
+            {suppliers.filter(s => s.source_type === 'independent' || !s.source_type || s.cat?.toLowerCase().includes('individual')).map(sup => (
+              <div key={sup.id} className="mobile-card flex items-center justify-between gap-2.5">
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <div className="w-10 h-10 rounded-full bg-slate-100 text-slate-800 font-bold flex items-center justify-center text-xs border border-slate-300 shrink-0">
+                    {sup.name.slice(0, 2).toUpperCase()}
+                  </div>
+                  <div className="min-w-0">
+                    <b className="text-sm text-slate-900 block truncate">{sup.name}</b>
+                    <span className="text-[11px] text-slate-500 block truncate">{sup.boat || 'MV Furaha'} · {sup.site}</span>
+                    <span className="text-[11px] font-mono text-slate-400">{sup.phone}</span>
+                  </div>
+                </div>
+                <Badge variant={sup.status === 'Active' ? 'green' : 'neutral'}>
+                  {sup.status || 'Active'}
+                </Badge>
+              </div>
+            ))}
+          </div>
+
+          <div className="hidden md:block data-table-wrap">
             <table className="data-table">
               <thead>
                 <tr>
@@ -717,7 +832,28 @@ export default function Crew() {
               )}
             </p>
 
-            <div className="data-table-wrap border-0">
+            {/* Mobile Financials Cards (< md) */}
+            <div className="md:hidden flex flex-col gap-2.5">
+              {crewAssignments.map(c => (
+                <div key={c.id} className="mobile-card flex items-center justify-between gap-2.5">
+                  <div className="min-w-0">
+                    <b className="text-sm text-slate-900 block truncate">{c.fishermanName}</b>
+                    <span className="text-[11px] text-slate-500 block truncate">{c.boatName} · {c.accountType || 'Permanent'}</span>
+                    <span className="text-[11px] font-mono text-slate-400">{c.phone}</span>
+                  </div>
+                  <div className="text-right shrink-0">
+                    <b className={`font-mono text-sm block tabular-nums ${c.balance > 0 ? 'text-rose-600' : 'text-emerald-700'}`}>
+                      {tzs(c.balance || 0)}
+                    </b>
+                    <span className="text-[10px] text-slate-500">
+                      {c.balance > 0 ? t('Anadaiwa', 'Owes company') : t('Safi', 'Settled')}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="hidden md:block data-table-wrap border-0">
               <table className="data-table">
                 <thead>
                   <tr>
@@ -792,7 +928,7 @@ export default function Crew() {
               />
             </Field>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <Field label={t('Cheo / Jukumu', 'Position / Role')}>
                 <select
                   value={assignForm.position}
@@ -817,7 +953,7 @@ export default function Crew() {
               </Field>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <Field label={t('Namba ya Simu', 'Phone Number')}>
                 <input
                   type="tel"
@@ -883,7 +1019,7 @@ export default function Crew() {
               />
             </Field>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <Field label={t('Idadi ya Siku', 'Duration (Days)')}>
                 <input
                   type="number"
@@ -906,7 +1042,7 @@ export default function Crew() {
               </Field>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <Field label={t('Advance / Malipo ya Awali', 'Advance Paid')}>
                 <input
                   type="number"
@@ -1020,7 +1156,7 @@ export default function Crew() {
               />
             </Field>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <Field label={t('Namba ya Usajili / Code', 'Reg No or Code')}>
                 <input
                   type="text"
@@ -1042,7 +1178,7 @@ export default function Crew() {
               </Field>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <Field label={t('Aina ya Injini', 'Engine Model')}>
                 <input
                   type="text"

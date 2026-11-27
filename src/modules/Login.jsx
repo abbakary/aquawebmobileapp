@@ -23,6 +23,7 @@ export default function Login({ go }) {
   const [showPw, setShowPw] = useState(false)
   const [rememberMe, setRememberMe] = useState(true)
   const [forgotOpen, setForgotOpen] = useState(false)
+  const [showDemo, setShowDemo] = useState(false)
   const [err, setErr] = useState('')
   const [loading, setLoading] = useState(false)
 
@@ -51,15 +52,15 @@ export default function Login({ go }) {
       {/* ═══════════════════════════════════════════════════════════════════════ */}
       {/* MOBILE LOGIN SCREEN (< 768px) — Matches Reference Screen 2              */}
       {/* ═══════════════════════════════════════════════════════════════════════ */}
-      <div className="md:hidden min-h-[100dvh] bg-white flex flex-col justify-between relative overflow-hidden">
+      <div className="md:hidden min-h-[100dvh] bg-white flex flex-col justify-between relative overflow-x-hidden">
         <div
-          className="px-4 pt-3 flex items-center justify-between relative z-10"
-          style={{ paddingTop: 'calc(12px + env(safe-area-inset-top))' }}
+          className="px-4 pb-1 flex items-center justify-between relative z-10 shrink-0"
+          style={{ paddingTop: 'calc(10px + env(safe-area-inset-top))' }}
         >
           <button
             type="button"
             onClick={() => go('')}
-            className="min-h-[44px] px-2 text-xs font-bold text-[#052d56] flex items-center gap-1"
+            className="min-h-[44px] px-1.5 text-xs font-bold text-[#052d56] flex items-center gap-1"
           >
             <ChevronLeft size={18} />
             <span>{t('Rudi', 'Back')}</span>
@@ -67,24 +68,24 @@ export default function Login({ go }) {
           <LangToggle lang={lang} setLang={setLang} />
         </div>
 
-        <div className="flex-1 flex flex-col justify-center px-6 py-4 max-w-md w-full mx-auto relative z-10">
+        <div className="flex-1 flex flex-col justify-center px-6 py-3 max-w-sm w-full mx-auto relative z-10">
           {/* Centered Brand Logo */}
-          <div className="flex flex-col items-center text-center mb-6">
-            <div className="w-16 h-16 rounded-2xl bg-white border border-slate-200 p-1.5 shadow-sm flex items-center justify-center mb-2">
+          <div className="flex flex-col items-center text-center mb-5">
+            <div className="w-14 h-14 rounded-2xl bg-white border border-slate-200 p-1.5 shadow-sm flex items-center justify-center mb-2">
               <img
                 src="/assets/aistudio/AquaCatch_Sharkwave_Logo_df0743e7.png"
                 alt="AquaCatch FishTrade ERP"
                 className="w-full h-full object-contain"
               />
             </div>
-            <span className="text-xl font-extrabold text-[#052d56] tracking-tight leading-none">
+            <span className="text-lg font-extrabold text-[#052d56] tracking-tight leading-none">
               AquaCatch
             </span>
-            <span className="text-[11px] font-bold text-sky-700 mt-1">
+            <span className="text-[11px] font-bold text-[#18b8b2] uppercase tracking-wider mt-1">
               FishTrade ERP
             </span>
 
-            <h1 className="text-2xl font-extrabold text-slate-900 mt-5 mb-1">
+            <h1 className="text-[22px] font-extrabold text-slate-900 mt-4 mb-1 leading-tight">
               {t('Karibu Tena', 'Welcome Back')}
             </h1>
             <p className="text-xs text-slate-500 m-0">
@@ -93,14 +94,14 @@ export default function Login({ go }) {
           </div>
 
           {!device.isOnline && (
-            <div className="mb-4 p-3 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-900 flex items-center gap-2">
+            <div className="mb-3.5 p-3 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-900 flex items-center gap-2">
               <WifiOff size={15} className="shrink-0 text-amber-600" />
               <span>{t('Haupo mtandaoni. Unahitaji mtandao kuingia mara ya kwanza.', 'Currently offline. Internet is required for initial sign in.')}</span>
             </div>
           )}
 
           {/* Icon-prefixed inputs */}
-          <div className="space-y-3.5">
+          <div className="space-y-3">
             <div className="relative">
               <User size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
               <input
@@ -112,7 +113,7 @@ export default function Login({ go }) {
                 onChange={e => { setU(e.target.value); setErr('') }}
                 onKeyDown={key}
                 disabled={loading}
-                className="input-field !pl-11 rounded-xl border-slate-200 bg-slate-50/60 font-medium"
+                className="input-field !pl-11 h-12 rounded-xl border-slate-200 bg-slate-50/70 font-medium"
               />
             </div>
 
@@ -126,7 +127,7 @@ export default function Login({ go }) {
                 onChange={e => { setP(e.target.value); setErr('') }}
                 onKeyDown={key}
                 disabled={loading}
-                className="input-field !pl-11 !pr-11 rounded-xl border-slate-200 bg-slate-50/60 font-medium"
+                className="input-field !pl-11 !pr-11 h-12 rounded-xl border-slate-200 bg-slate-50/70 font-medium"
               />
               <button
                 type="button"
@@ -138,7 +139,7 @@ export default function Login({ go }) {
               </button>
             </div>
 
-            <div className="flex items-center justify-between text-xs pt-0.5">
+            <div className="flex items-center justify-between text-xs min-h-[36px]">
               <label className="flex items-center gap-2 text-slate-600 font-medium cursor-pointer">
                 <input
                   type="checkbox"
@@ -151,7 +152,7 @@ export default function Login({ go }) {
               <button
                 type="button"
                 onClick={() => setForgotOpen(true)}
-                className="text-sky-700 font-semibold hover:underline"
+                className="text-sky-700 font-semibold hover:underline py-1"
               >
                 {t('Umesahau nywila?', 'Forgot password?')}
               </button>
@@ -184,36 +185,44 @@ export default function Login({ go }) {
           </div>
 
           {import.meta.env.DEV && (
-            <div className="mt-5 p-3 bg-slate-50 border border-slate-200 rounded-xl flex flex-col gap-2 text-xs">
-              <b className="text-slate-700 uppercase tracking-wide text-[10px]">
-                {t('Akaunti za Majaribio:', 'Demo Credentials:')}
-              </b>
-              <div className="grid grid-cols-2 gap-1.5">
-                {[
-                  { usr: 'owner', pwd: 'password123', en: 'Owner' },
-                  { usr: 'manager', pwd: 'password123', en: 'Manager' },
-                  { usr: 'juma', pwd: 'password123', en: 'Purchasing' },
-                  { usr: 'neema', pwd: 'password123', en: 'Inspector' },
-                ].map(acc => (
-                  <button
-                    key={acc.usr}
-                    type="button"
-                    onClick={() => fill(acc.usr, acc.pwd)}
-                    className="px-2.5 py-2 text-left rounded-lg bg-white border border-slate-200 hover:border-blue-400"
-                  >
-                    <strong className="block text-slate-900">{acc.en}</strong>
-                    <span className="text-[10px] text-slate-500 font-mono">{acc.usr}</span>
-                  </button>
-                ))}
-              </div>
+            <div className="mt-3 flex flex-col items-center">
+              <button
+                type="button"
+                onClick={() => setShowDemo(v => !v)}
+                className="text-[11px] font-semibold text-slate-400 hover:text-slate-600 py-1.5 px-3 rounded-full"
+              >
+                {showDemo
+                  ? t('Ficha Akaunti za Majaribio', 'Hide Demo Accounts')
+                  : t('Akaunti za Majaribio (Demo)', 'Quick Demo Credentials')}
+              </button>
+              {showDemo && (
+                <div className="mt-1.5 w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl grid grid-cols-2 gap-1.5 text-xs">
+                  {[
+                    { usr: 'owner', pwd: 'password123', en: 'Owner' },
+                    { usr: 'manager', pwd: 'password123', en: 'Manager' },
+                    { usr: 'juma', pwd: 'password123', en: 'Purchasing' },
+                    { usr: 'neema', pwd: 'password123', en: 'Inspector' },
+                  ].map(acc => (
+                    <button
+                      key={acc.usr}
+                      type="button"
+                      onClick={() => { fill(acc.usr, acc.pwd); setShowDemo(false) }}
+                      className="px-2.5 py-2 text-left rounded-lg bg-white border border-slate-200 hover:border-blue-400"
+                    >
+                      <strong className="block text-slate-900">{acc.en}</strong>
+                      <span className="text-[10px] text-slate-500 font-mono">{acc.usr}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
           )}
         </div>
 
         {/* Soft Blue Ocean Wave Bottom Decoration */}
-        <svg viewBox="0 0 400 72" preserveAspectRatio="none" className="w-full h-16 pointer-events-none shrink-0">
-          <path d="M0,32 C90,72 200,8 310,40 C355,54 385,35 400,22 L400,72 L0,72 Z" fill="#18b8b2" fillOpacity="0.32" />
-          <path d="M0,48 C110,12 240,68 400,32 L400,72 L0,72 Z" fill="#052d56" fillOpacity="0.16" />
+        <svg viewBox="0 0 400 64" preserveAspectRatio="none" className="w-full h-14 pointer-events-none shrink-0">
+          <path d="M0,28 C90,64 200,8 310,36 C355,48 385,30 400,18 L400,64 L0,64 Z" fill="#18b8b2" fillOpacity="0.32" />
+          <path d="M0,42 C110,10 240,60 400,28 L400,64 L0,64 Z" fill="#052d56" fillOpacity="0.16" />
         </svg>
       </div>
 

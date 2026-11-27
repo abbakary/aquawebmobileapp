@@ -12,6 +12,7 @@ function readDeviceSnapshot() {
       isAndroid: false,
       isTouch: false,
       viewport: 'desktop',
+      orientation: 'landscape',
       isMobile: false,
       isTablet: false,
       isDesktop: true,
@@ -35,18 +36,23 @@ function readDeviceSnapshot() {
   const isAndroid = /Android/i.test(ua)
   const os = isIOS ? 'ios' : isAndroid ? 'android' : 'desktop'
 
-  const isSafari = /Safari/i.test(ua) && !/Chrome|CriOS|FxiOS|Edg/i.test(ua)
-  const isChrome = /Chrome|CriOS/i.test(ua) && !/Edg/i.test(ua)
-  const browser = isSafari ? 'safari' : isChrome ? 'chrome' : 'other'
+  const isEdge = /Edg|EdgiOS|EdgA/i.test(ua)
+  const isFirefox = /Firefox|FxiOS/i.test(ua)
+  const isChrome = /Chrome|CriOS/i.test(ua) && !isEdge
+  const isSafari = /Safari/i.test(ua) && !/Chrome|CriOS|FxiOS|Edg|OPR/i.test(ua)
+  const browser = isSafari ? 'safari' : isChrome ? 'chrome' : isEdge ? 'edge' : isFirefox ? 'firefox' : 'other'
 
   const width = window.innerWidth || 1280
   const height = window.innerHeight || 800
+  const orientation = width > height ? 'landscape' : 'portrait'
   const isTouch = 'ontouchstart' in window || maxTouch > 0
   const viewport = width < 768 ? 'mobile' : width < 1024 ? 'tablet' : 'desktop'
 
-  const isStandalone =
+  const isStandalone = Boolean(
     window.matchMedia?.('(display-mode: standalone)').matches ||
+    window.matchMedia?.('(display-mode: minimal-ui)').matches ||
     window.navigator.standalone === true
+  )
 
   const conn = navigator.connection || navigator.mozConnection || navigator.webkitConnection
   const isOnline = navigator.onLine !== false
@@ -70,6 +76,7 @@ function readDeviceSnapshot() {
     isAndroid,
     isTouch,
     viewport,
+    orientation,
     isMobile: viewport === 'mobile',
     isTablet: viewport === 'tablet',
     isDesktop: viewport === 'desktop',
@@ -136,11 +143,13 @@ export function DeviceProvider({ children }) {
   useEffect(() => {
     const root = document.documentElement
     root.dataset.os = info.os
+    root.dataset.browser = info.browser
     root.dataset.viewport = info.viewport
+    root.dataset.orientation = info.orientation
     root.dataset.standalone = info.isStandalone ? 'true' : 'false'
     root.dataset.network = !info.isOnline ? 'offline' : lowBandwidthMode ? 'slow' : 'fast'
     root.dataset.touch = info.isTouch ? 'true' : 'false'
-  }, [info.os, info.viewport, info.isStandalone, info.isOnline, info.isTouch, lowBandwidthMode])
+  }, [info.os, info.browser, info.viewport, info.orientation, info.isStandalone, info.isOnline, info.isTouch, lowBandwidthMode])
 
   const value = useMemo(() => ({
     ...info,
@@ -148,9 +157,9 @@ export function DeviceProvider({ children }) {
     manualLowBandwidth: manualLowBw,
     setLowBandwidthMode,
     platformLabel: info.isIOS
-      ? (info.isStandalone ? 'iPhone / iPad App (PWA)' : 'iPhone / iPad Safari')
+      ? (info.isStandalone ? 'iPhone / iPad App (PWA)' : `iPhone / iPad (${info.browser === 'safari' ? 'Safari' : info.browser.toUpperCase()})`)
       : info.isAndroid
-        ? (info.isStandalone ? 'Android App (PWA)' : 'Android Mobile Browser')
+        ? (info.isStandalone ? 'Android App (PWA)' : `Android (${info.browser === 'chrome' ? 'Chrome' : info.browser.toUpperCase()})`)
         : (info.isStandalone ? 'Desktop App (PWA)' : 'Desktop Web'),
     networkLabel: !info.isOnline
       ? 'Offline'

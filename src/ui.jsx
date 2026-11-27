@@ -67,6 +67,7 @@ export function FishPhoto({ sp, size = 40, className = '' }) {
         src={src}
         alt={sp}
         loading="lazy"
+        decoding="async"
         className="w-full h-full object-cover"
         onError={() => setErr(true)}
       />
@@ -254,7 +255,7 @@ export function ScaleTerminal({ weight, onTare, onSimulateWeigh, onManualWeight,
       {/* Mobile-first Clean Scale Card matching Screen 6 */}
       <div className="sm:hidden bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
         <div className="relative h-40 bg-slate-900">
-          <img src="/photos/scale-dock.png" alt="Dock Digital Scale" className="w-full h-full object-cover" />
+          <img src="/photos/scale-dock.png" alt="Dock Digital Scale" loading="lazy" decoding="async" className="w-full h-full object-cover" />
           <div className="absolute inset-x-0 bottom-0 h-14 bg-gradient-to-t from-slate-950/80 to-transparent" />
           <span className="absolute bottom-2.5 right-3 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-600 text-white text-[11px] font-bold shadow">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-200" />
@@ -417,6 +418,8 @@ export function TraceabilityModal({ batch, onClose }) {
         <img
           src="/photos/traceability-flow.png"
           alt="Traceability Flow"
+          loading="lazy"
+          decoding="async"
           className="w-full h-36 object-cover opacity-65"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-900/60 to-transparent p-4 flex flex-col justify-end">
@@ -532,10 +535,12 @@ export function PWAInstallButton({ variant = 'default' }) {
           {device.isIOS ? (
             <div className="space-y-3 text-sm text-slate-700">
               <div className="p-3 rounded-xl bg-blue-50 border border-blue-200 text-xs text-blue-900">
-                {uiT('Kwenye Safari, AquaCatch inaweza kufanya kazi kama App kamili hata bila intaneti.', 'In Safari, AquaCatch installs as a full-screen app with offline storage at lake piers.')}
+                {device.browser === 'safari'
+                  ? uiT('Kwenye Safari, AquaCatch inaweza kufanya kazi kama App kamili hata bila intaneti.', 'In Safari, AquaCatch installs as a full-screen app with offline storage at lake piers.')
+                  : uiT('Unatumia kivinjari kingine kwenye iPhone/iPad. Fungua kiungo hiki ndani ya Safari au tumia kitufe cha Share -> Add to Home Screen.', 'You are using a non-Safari iOS browser. For full offline iOS app install, open in Safari or tap Share -> Add to Home Screen.')}
               </div>
               <ol className="list-decimal pl-5 space-y-2 text-xs leading-relaxed">
-                <li>{uiT('Bofya kitufe cha Share (mraba wenye mshale kwenda juu) chini ya Safari.', 'Tap the Share button (square with upward arrow) in the Safari toolbar.')}</li>
+                <li>{uiT('Bofya kitufe cha Share (mraba wenye mshale kwenda juu) kwenye menyu.', 'Tap the Share button (square with upward arrow) in the browser toolbar.')}</li>
                 <li>{uiT('Shuka chini kisha chagua "Add to Home Screen".', 'Scroll down and tap "Add to Home Screen".')}</li>
                 <li>{uiT('Thibitisha "Add" — ikoni ya AquaCatch itatokea kwenye skrini yako.', 'Tap "Add" — the AquaCatch icon will appear on your Home Screen.')}</li>
               </ol>
@@ -551,19 +556,101 @@ export function PWAInstallButton({ variant = 'default' }) {
   )
 }
 
+export function SyncQueueModal({ open, onClose }) {
+  const store = useS()
+  const device = useDevice()
+
+  if (!open || !store) return null
+  const { isOnline, lowBandwidthMode, pendingSyncCount, pendingQueue = [], syncing, syncError, syncNow, clearFailedQueueItem } = store
+
+  return (
+    <Modal
+      title={uiT('Foleni ya Kutuma Mtandaoni', 'Offline Sync Queue')}
+      subtitle={`${device.platformLabel} · ${device.networkLabel}`}
+      onClose={onClose}
+      maxWidth="max-w-lg"
+    >
+      <div className="space-y-3">
+        <div className="flex flex-wrap items-center justify-between gap-2 p-3 rounded-xl bg-slate-50 border border-slate-200 text-xs">
+          <div className="flex items-center gap-2 font-semibold text-slate-700">
+            {isOnline ? <Wifi size={15} className="text-emerald-600" /> : <WifiOff size={15} className="text-amber-600" />}
+            <span>{device.networkLabel}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => device.setLowBandwidthMode?.(lowBandwidthMode ? false : true)}
+              className="btn-secondary text-xs py-1.5 px-2.5"
+            >
+              <Gauge size={13} />
+              {lowBandwidthMode ? uiT('Data Kidogo: ON', 'Low Data: ON') : uiT('Data Kidogo: OFF', 'Low Data: OFF')}
+            </button>
+            <button
+              type="button"
+              disabled={!isOnline || syncing || pendingSyncCount === 0}
+              onClick={() => syncNow?.()}
+              className="btn-primary text-xs py-1.5 px-3"
+            >
+              <RefreshCw size={13} className={syncing ? 'animate-spin' : ''} />
+              {syncing ? uiT('Inatuma...', 'Syncing...') : uiT('Tuma Yote', 'Sync All')}
+            </button>
+          </div>
+        </div>
+
+        {syncError && (
+          <div className="p-2.5 rounded-xl bg-rose-50 border border-rose-200 text-xs text-rose-700">
+            {syncError}
+          </div>
+        )}
+
+        {pendingQueue.length === 0 ? (
+          <div className="p-6 text-center text-xs text-slate-500 bg-slate-50 rounded-xl border border-dashed border-slate-200">
+            <CheckCircle2 size={24} className="text-emerald-600 mx-auto mb-1.5" />
+            {uiT('Kila kitu kimeshasawazishwa!', 'All records are synced with the server.')}
+          </div>
+        ) : (
+          <div className="space-y-2 max-h-72 overflow-y-auto">
+            {pendingQueue.map(item => (
+              <div key={item.id} className="p-3 rounded-xl border border-slate-200 bg-white flex items-center justify-between gap-2 text-xs">
+                <div className="min-w-0">
+                  <b className="text-slate-900 block truncate">{item.label || item.op}</b>
+                  <span className="text-[11px] text-slate-500 font-mono">
+                    {new Date(item.createdAt).toLocaleTimeString()} · {item.op}
+                  </span>
+                  {item.lastError && (
+                    <span className="block text-[11px] text-rose-600 mt-0.5">{item.lastError}</span>
+                  )}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => clearFailedQueueItem?.(item.id)}
+                  aria-label="Discard queued item"
+                  className="p-2 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 shrink-0"
+                >
+                  <Trash2 size={14} />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </Modal>
+  )
+}
+
 export function OfflineIndicator() {
   const store = useS()
   const device = useDevice()
   const [queueOpen, setQueueOpen] = useState(false)
 
   if (!store) return null
-  const { isOnline, isSlowNetwork, pendingSyncCount, pendingQueue = [], syncing, syncError, syncNow, clearFailedQueueItem } = store
+  const { isOnline, isSlowNetwork, pendingSyncCount, syncing, syncNow } = store
 
   if (isOnline && !isSlowNetwork && pendingSyncCount === 0) return null
 
   return (
     <>
-      <div className="offline-banner">
+      <div className="offline-banner hidden md:flex">
         <div className="flex items-center gap-2 min-w-0">
           {!isOnline ? (
             <WifiOff size={15} className="text-amber-400 shrink-0" />
@@ -605,69 +692,7 @@ export function OfflineIndicator() {
         </div>
       </div>
 
-      {queueOpen && (
-        <Modal
-          title={uiT('Foleni ya Kutuma Mtandaoni', 'Offline Sync Queue')}
-          subtitle={uiT('Miamala iliyorekodiwa bila intaneti itatumwa kiotomatiki', 'Transactions recorded offline replay automatically once connected')}
-          onClose={() => setQueueOpen(false)}
-          maxWidth="max-w-lg"
-        >
-          <div className="space-y-3">
-            <div className="flex items-center justify-between p-3 rounded-xl bg-slate-50 border border-slate-200 text-xs">
-              <div className="flex items-center gap-2 font-semibold text-slate-700">
-                {isOnline ? <Wifi size={15} className="text-emerald-600" /> : <WifiOff size={15} className="text-amber-600" />}
-                <span>{device.networkLabel}</span>
-              </div>
-              <button
-                type="button"
-                disabled={!isOnline || syncing || pendingSyncCount === 0}
-                onClick={() => syncNow?.()}
-                className="btn-primary text-xs py-1.5 px-3"
-              >
-                <RefreshCw size={13} className={syncing ? 'animate-spin' : ''} />
-                {syncing ? uiT('Inatuma...', 'Syncing...') : uiT('Tuma Yote', 'Sync All')}
-              </button>
-            </div>
-
-            {syncError && (
-              <div className="p-2.5 rounded-xl bg-rose-50 border border-rose-200 text-xs text-rose-700">
-                {syncError}
-              </div>
-            )}
-
-            {pendingQueue.length === 0 ? (
-              <div className="p-6 text-center text-xs text-slate-500 bg-slate-50 rounded-xl border border-dashed border-slate-200">
-                <CheckCircle2 size={24} className="text-emerald-600 mx-auto mb-1.5" />
-                {uiT('Kila kitu kimeshasawazishwa!', 'All records are synced with the server.')}
-              </div>
-            ) : (
-              <div className="space-y-2 max-h-72 overflow-y-auto">
-                {pendingQueue.map(item => (
-                  <div key={item.id} className="p-3 rounded-xl border border-slate-200 bg-white flex items-center justify-between gap-2 text-xs">
-                    <div className="min-w-0">
-                      <b className="text-slate-900 block truncate">{item.label || item.op}</b>
-                      <span className="text-[11px] text-slate-500 font-mono">
-                        {new Date(item.createdAt).toLocaleTimeString()} · {item.op}
-                      </span>
-                      {item.lastError && (
-                        <span className="block text-[11px] text-rose-600 mt-0.5">{item.lastError}</span>
-                      )}
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => clearFailedQueueItem?.(item.id)}
-                      aria-label="Discard queued item"
-                      className="p-2 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 shrink-0"
-                    >
-                      <Trash2 size={14} />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </Modal>
-      )}
+      <SyncQueueModal open={queueOpen} onClose={() => setQueueOpen(false)} />
     </>
   )
 }

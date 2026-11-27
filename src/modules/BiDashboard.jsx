@@ -522,14 +522,14 @@ export default function BiDashboard({ go }) {
           </p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2 w-full lg:w-auto">
           {/* Scope Toggle: All Areas vs Current Area */}
           {branches.length > 1 && (
-            <div className="flex bg-slate-200/80 p-0.5 rounded-lg text-xs font-semibold">
+            <div className="flex bg-slate-200/80 p-0.5 rounded-lg text-xs font-semibold max-w-full overflow-x-auto no-scrollbar">
               <button
                 type="button"
                 onClick={() => setScope('all')}
-                className={`px-3 py-1.5 rounded-md transition ${
+                className={`px-3 py-1.5 rounded-md whitespace-nowrap transition ${
                   scope === 'all' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600'
                 }`}
               >
@@ -538,7 +538,7 @@ export default function BiDashboard({ go }) {
               <button
                 type="button"
                 onClick={() => setScope('current')}
-                className={`px-3 py-1.5 rounded-md transition ${
+                className={`px-3 py-1.5 rounded-md whitespace-nowrap transition ${
                   scope === 'current' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600'
                 }`}
               >
@@ -548,7 +548,7 @@ export default function BiDashboard({ go }) {
           )}
 
           {/* Period Filter */}
-          <div className="flex bg-slate-200/80 p-0.5 rounded-lg text-xs font-semibold">
+          <div className="flex bg-slate-200/80 p-0.5 rounded-lg text-xs font-semibold overflow-x-auto no-scrollbar">
             {[
               ['all', t('Muda Wote', 'All Time')],
               ['30', t('Siku 30', '30 Days')],
@@ -558,7 +558,7 @@ export default function BiDashboard({ go }) {
                 key={k}
                 type="button"
                 onClick={() => setPeriod(k)}
-                className={`px-2.5 py-1.5 rounded-md transition ${
+                className={`px-2.5 py-1.5 rounded-md whitespace-nowrap transition ${
                   period === k ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600'
                 }`}
               >
@@ -571,7 +571,7 @@ export default function BiDashboard({ go }) {
           <select
             value={spFilter}
             onChange={e => setSpFilter(e.target.value)}
-            className="input-field py-1.5 px-2.5 text-xs w-auto"
+            className="input-field py-1.5 px-2.5 text-xs w-full sm:w-auto"
           >
             <option value="All">{t('Samaki Wote', 'All Species')}</option>
             {SPECIES.map(sp => (
@@ -702,7 +702,7 @@ export default function BiDashboard({ go }) {
           <p className="text-xs text-slate-500 m-0 mb-3">
             {t('Kila aina ya gharama kutoka moduli zote (TZS)', 'Every cost category across all operational modules (TZS)')}
           </p>
-          <div className="h-64">
+          <div className="h-56 sm:h-64">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
@@ -711,8 +711,8 @@ export default function BiDashboard({ go }) {
                   nameKey="name"
                   cx="50%"
                   cy="50%"
-                  innerRadius={55}
-                  outerRadius={88}
+                  innerRadius={48}
+                  outerRadius={78}
                   paddingAngle={3}
                 >
                   {pieData.map((entry, idx) => (
@@ -733,7 +733,7 @@ export default function BiDashboard({ go }) {
           <p className="text-xs text-slate-500 m-0 mb-3">
             {t('Utendaji wa kila kituo/mwalo ukilinganishwa', 'Side-by-side financial performance per landing station')}
           </p>
-          <div className="h-64">
+          <div className="h-56 sm:h-64">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={branchChartData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
@@ -752,7 +752,7 @@ export default function BiDashboard({ go }) {
 
       {/* All-Module Cost & Profit Ledger Table */}
       <div className="panel p-0 overflow-hidden">
-        <div className="p-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
+        <div className="p-4 bg-slate-50 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
           <div>
             <h3 className="text-sm font-bold text-slate-900 m-0">
               {t('Jedwali la Gharama Zote Kutoka Kila Moduli', 'Integrated All-Module Cost & Profit Breakdown')}
@@ -761,11 +761,64 @@ export default function BiDashboard({ go }) {
               {t('Bofya "Angalia" kuona uchambuzi wa kina wa kila gharama au nenda moja kwa moja kwenye moduli husika', 'Click "View" for detailed cost analysis or jump directly to the source module')}
             </p>
           </div>
-          <span className="font-mono text-xs font-bold text-slate-700">
+          <span className="font-mono text-xs font-bold text-slate-700 shrink-0">
             {t('Jumla ya Gharama:', 'Total Costs:')} {tzs(sumBI.totalAllCosts)}
           </span>
         </div>
-        <div className="data-table-wrap border-0 rounded-none">
+
+        {/* Mobile Cost Ledger Cards */}
+        <div className="md:hidden p-3 flex flex-col gap-2.5 bg-slate-50/40">
+          {costLines.map(c => (
+            <div key={c.id} className="mobile-card flex flex-col gap-2">
+              <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0">
+                  <b className="text-sm text-slate-900 block leading-snug">{c.module}</b>
+                  <span className="text-[11px] text-slate-500 block">{c.source}</span>
+                </div>
+                <Badge variant={c.status === 'high' ? 'amber' : 'neutral'}>
+                  {c.revShare.toFixed(1)}% {t('Mapato', 'Rev')}
+                </Badge>
+              </div>
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex-1 flex items-center gap-2">
+                  <div className="flex-1 bg-slate-100 h-1.5 rounded-full overflow-hidden">
+                    <div
+                      className="bg-blue-700 h-full rounded-full"
+                      style={{ width: `${Math.min(100, Math.round(c.share))}%` }}
+                    />
+                  </div>
+                  <span className="font-mono text-[11px] text-slate-600">{c.share.toFixed(1)}%</span>
+                </div>
+                <b className="font-mono text-sm text-slate-900 shrink-0">{tzs(c.amount)}</b>
+              </div>
+              <div className="flex items-center justify-between gap-2 pt-2 border-t border-slate-100">
+                <span className="text-[11px] text-slate-500 truncate">{c.note}</span>
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <ViewBtn onClick={() => setViewLine(c)} />
+                  {go && (
+                    <button
+                      type="button"
+                      onClick={() => go(c.targetTab)}
+                      className="btn-secondary text-xs py-1 px-2.5"
+                    >
+                      {t('Fungua', 'Open')}
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+          ))}
+          <div className={`p-3 rounded-xl border text-xs flex items-center justify-between ${sumBI.netProfit >= 0 ? 'bg-emerald-50 border-emerald-200 text-emerald-900' : 'bg-rose-50 border-rose-200 text-rose-900'}`}>
+            <div>
+              <span className="font-bold block">{sumBI.netProfit >= 0 ? t('FAIDA HALISI', 'NET PROFIT') : t('HASARA HALISI', 'NET LOSS')}</span>
+              <span className="font-mono text-[11px]">{t('Gharama:', 'Costs:')} {tzs(sumBI.totalAllCosts)}</span>
+            </div>
+            <b className="font-mono text-sm">{tzs(sumBI.netProfit)} ({sumBI.netMargin.toFixed(1)}%)</b>
+          </div>
+        </div>
+
+        {/* Desktop Cost Ledger Table */}
+        <div className="hidden md:block data-table-wrap border-0 rounded-none">
           <table className="data-table">
             <thead>
               <tr>
@@ -858,7 +911,55 @@ export default function BiDashboard({ go }) {
             {t('Linganisha mapato, gharama zote, faida ghafi na faida/hasara halisi kwa kila kituo', 'Compare revenue, all-in costs, gross profit, and net profit/loss across every station')}
           </p>
         </div>
-        <div className="data-table-wrap border-0 rounded-none">
+
+        {/* Mobile Area Summary Cards */}
+        <div className="md:hidden p-3 flex flex-col gap-2.5 bg-slate-50/40">
+          {branchRows.map(r => (
+            <div key={r.id} className="mobile-card flex flex-col gap-2">
+              <div className="flex items-center justify-between gap-2">
+                <b className="text-sm text-slate-900 truncate">{r.name}</b>
+                <Badge variant={r.bi.netProfit >= 0 ? 'green' : 'red'}>
+                  {r.bi.netMargin.toFixed(1)}%
+                </Badge>
+              </div>
+              <div className="grid grid-cols-2 gap-2 text-xs pt-1 border-t border-slate-100">
+                <div>
+                  <span className="text-[11px] text-slate-400 block">{t('Mapato', 'Revenue')}</span>
+                  <b className="font-mono text-slate-900">{tzs(r.bi.rev)}</b>
+                </div>
+                <div className="text-right">
+                  <span className="text-[11px] text-slate-400 block">{t('Gharama Zote', 'Total Costs')}</span>
+                  <b className="font-mono text-rose-700">{tzs(r.bi.totalAllCosts)}</b>
+                </div>
+                <div>
+                  <span className="text-[11px] text-slate-400 block">{t('Usafiri & Matengenezo', 'Transport & Maint.')}</span>
+                  <span className="font-mono text-slate-700">{tzs(r.bi.transportCost + r.bi.maintCompanyCost)}</span>
+                </div>
+                <div className="text-right">
+                  <span className="text-[11px] text-slate-400 block">{t('Faida / Hasara Halisi', 'Net Profit / Loss')}</span>
+                  <b className={`font-mono ${r.bi.netProfit >= 0 ? 'text-emerald-700' : 'text-rose-700'}`}>
+                    {tzs(r.bi.netProfit)}
+                  </b>
+                </div>
+              </div>
+            </div>
+          ))}
+          <div className="p-3 rounded-xl bg-blue-50 border border-blue-200 text-xs flex items-center justify-between">
+            <div>
+              <b className="text-blue-950 block">{t('JUMLA KUU (MAENEO YOTE)', 'CONSOLIDATED TOTAL')}</b>
+              <span className="font-mono text-slate-600">{t('Mapato:', 'Rev:')} {tzs(sumBI.rev)}</span>
+            </div>
+            <div className="text-right">
+              <b className={`font-mono text-sm block ${sumBI.netProfit >= 0 ? 'text-emerald-700' : 'text-rose-700'}`}>
+                {tzs(sumBI.netProfit)}
+              </b>
+              <span className="font-mono text-[11px] text-blue-900">{sumBI.netMargin.toFixed(1)}%</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Desktop Area Summary Table */}
+        <div className="hidden md:block data-table-wrap border-0 rounded-none">
           <table className="data-table">
             <thead>
               <tr>
@@ -933,7 +1034,39 @@ export default function BiDashboard({ go }) {
               {t('Tambua aina ya samaki inayoleta faida kubwa zaidi', 'Identify which fish species generates the highest margin')}
             </p>
           </div>
-          <div className="data-table-wrap border-0 rounded-none">
+
+          {/* Mobile Species Cards */}
+          <div className="md:hidden p-3 flex flex-col gap-2.5 bg-slate-50/40">
+            {consolidatedSpecies.map(sp => (
+              <div key={sp.sp} className="mobile-card flex flex-col gap-2">
+                <div className="flex items-center justify-between gap-2">
+                  <b className="text-sm text-slate-900">{spLabel(sp.sp)}</b>
+                  <Badge variant={sp.margin >= 15 ? 'green' : sp.margin >= 0 ? 'amber' : 'red'}>
+                    {sp.margin.toFixed(1)}%
+                  </Badge>
+                </div>
+                <div className="grid grid-cols-2 gap-2 text-xs pt-1 border-t border-slate-100">
+                  <div>
+                    <span className="text-[11px] text-slate-400 block">{t('Manunuzi', 'Purchased')} ({f(sp.bKg)} kg)</span>
+                    <b className="font-mono text-slate-800">{tzs(sp.bCost)}</b>
+                  </div>
+                  <div className="text-right">
+                    <span className="text-[11px] text-slate-400 block">{t('Mauzo', 'Sold')} ({f(sp.sKg)} kg)</span>
+                    <b className="font-mono text-slate-900">{tzs(sp.sRev)}</b>
+                  </div>
+                </div>
+                <div className="flex items-center justify-between pt-1.5 border-t border-slate-100 text-xs">
+                  <span className="text-slate-500">{t('Faida Ghafi', 'Gross Profit')}</span>
+                  <b className={`font-mono ${sp.profit >= 0 ? 'text-emerald-700' : 'text-rose-700'}`}>
+                    {tzs(sp.profit)}
+                  </b>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Desktop Species Table */}
+          <div className="hidden md:block data-table-wrap border-0 rounded-none">
             <table className="data-table">
               <thead>
                 <tr>
