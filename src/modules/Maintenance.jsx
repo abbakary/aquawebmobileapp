@@ -34,11 +34,30 @@ export default function Maintenance() {
   const [filterStatus, setFilterStatus] = useState('All')
 
   useEffect(() => {
+    const applySubTab = sub => {
+      if (sub && ['orders', 'boats', 'spares', 'schedules'].includes(sub)) {
+        setTab(sub)
+      }
+    }
+    try {
+      const pending = JSON.parse(sessionStorage.getItem('ft_subtab') || 'null')
+      if (pending?.tab === 'maintenance') {
+        applySubTab(pending.subTab)
+        sessionStorage.removeItem('ft_subtab')
+      }
+    } catch {}
+    const onSubTab = e => {
+      if (e.detail?.tab === 'maintenance') applySubTab(e.detail.subTab)
+    }
     const onQuickAdd = e => {
       if (e.detail?.tab === 'maintenance') setNewOrderModal(true)
     }
+    window.addEventListener('aquacatch:subtab', onSubTab)
     window.addEventListener('aquacatch:quick-add', onQuickAdd)
-    return () => window.removeEventListener('aquacatch:quick-add', onQuickAdd)
+    return () => {
+      window.removeEventListener('aquacatch:subtab', onSubTab)
+      window.removeEventListener('aquacatch:quick-add', onQuickAdd)
+    }
   }, [])
 
   const boats = s.boats || []

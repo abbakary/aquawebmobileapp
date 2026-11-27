@@ -65,13 +65,32 @@ export default function Fuel() {
   const [issueModalOpen, setIssueModalOpen] = useState(false)
 
   useEffect(() => {
+    const applySubTab = sub => {
+      if (sub && ['issue', 'accounts', 'stock', 'purchases', 'settlements', 'reports'].includes(sub)) {
+        setActiveView(sub)
+      }
+    }
+    try {
+      const pending = JSON.parse(sessionStorage.getItem('ft_subtab') || 'null')
+      if (pending?.tab === 'fuel') {
+        applySubTab(pending.subTab)
+        sessionStorage.removeItem('ft_subtab')
+      }
+    } catch {}
+    const onSubTab = e => {
+      if (e.detail?.tab === 'fuel') applySubTab(e.detail.subTab)
+    }
     const onQuickAdd = e => {
       if (e.detail?.tab !== 'fuel') return
       setIssueStep(1)
       setIssueModalOpen(true)
     }
+    window.addEventListener('aquacatch:subtab', onSubTab)
     window.addEventListener('aquacatch:quick-add', onQuickAdd)
-    return () => window.removeEventListener('aquacatch:quick-add', onQuickAdd)
+    return () => {
+      window.removeEventListener('aquacatch:subtab', onSubTab)
+      window.removeEventListener('aquacatch:quick-add', onQuickAdd)
+    }
   }, [])
   const [receiptRecord, setReceiptRecord] = useState(null)
   const [createAccountModal, setCreateAccountModal] = useState(false)

@@ -38,11 +38,30 @@ export default function Crew() {
   const [settleKibalua, setSettleKibalua] = useState(null)
 
   useEffect(() => {
+    const applySubTab = sub => {
+      if (sub && ['company', 'independent', 'financials', 'boats'].includes(sub)) {
+        setTab(sub)
+      }
+    }
+    try {
+      const pending = JSON.parse(sessionStorage.getItem('ft_subtab') || 'null')
+      if (pending?.tab === 'crew') {
+        applySubTab(pending.subTab)
+        sessionStorage.removeItem('ft_subtab')
+      }
+    } catch {}
+    const onSubTab = e => {
+      if (e.detail?.tab === 'crew') applySubTab(e.detail.subTab)
+    }
     const onQuickAdd = e => {
       if (e.detail?.tab === 'crew') setAssignOpen(true)
     }
+    window.addEventListener('aquacatch:subtab', onSubTab)
     window.addEventListener('aquacatch:quick-add', onQuickAdd)
-    return () => window.removeEventListener('aquacatch:quick-add', onQuickAdd)
+    return () => {
+      window.removeEventListener('aquacatch:subtab', onSubTab)
+      window.removeEventListener('aquacatch:quick-add', onQuickAdd)
+    }
   }, [])
 
   // Form states

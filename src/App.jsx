@@ -30,7 +30,19 @@ import {
   WifiOff,
   RefreshCw,
   Smartphone,
-  Gauge
+  Gauge,
+  Ship,
+  ShoppingCart,
+  Store,
+  BadgeCheck,
+  Wallet,
+  CreditCard,
+  FileSpreadsheet,
+  Droplets,
+  TrendingUp,
+  ArrowLeftRight,
+  LayoutGrid,
+  Home as HomeIcon
 } from 'lucide-react'
 import { useS, ROLES } from './store'
 import { useDevice } from './device'
@@ -88,25 +100,47 @@ const MODULE_GROUPS = [
   { id: 'governance', label: ['Vibali na Ukaguzi', 'Compliance & Audit'], shortGroup: ['Usimamizi', 'Governance'], defaultTab: 'compliance', items: ['compliance', 'audit', 'staff'] }
 ]
 
-const DRAWER_ORDER = [
-  'home',
-  'suppliers',
-  'buy',
-  'quality',
-  'stock',
-  'sales',
-  'transport',
-  'crew',
-  'fuel',
-  'maintenance',
-  'payments',
-  'expenses',
-  'reports',
-  'bi',
-  'hq',
-  'compliance',
-  'audit',
-  'staff'
+const MOBILE_LAUNCHER_GROUPS = [
+  {
+    id: 'core',
+    title: ['USIMAMIZI WA SAMAKI', 'CORE FISH MANAGEMENT'],
+    items: [
+      { id: 'crew', tab: 'crew', subTab: 'company', label: ['Wavuvi', 'Crew'], icon: Ship, card: 'bg-slate-100/85 border-slate-200/80', color: 'text-[#0b3a8c]' },
+      { id: 'buy', tab: 'buy', label: ['Manunuzi', 'Purchasing'], icon: ShoppingCart, card: 'bg-blue-50/85 border-blue-100', color: 'text-blue-700' },
+      { id: 'suppliers', tab: 'suppliers', label: ['Wasambazaji', 'Fishermen'], icon: Users, card: 'bg-teal-50/85 border-teal-100', color: 'text-teal-700' },
+      { id: 'stock', tab: 'stock', label: ['Stoo', 'Storage'], icon: Warehouse, card: 'bg-indigo-50/85 border-indigo-100', color: 'text-indigo-700' },
+      { id: 'sales', tab: 'sales', label: ['Mauzo', 'Sales'], icon: Store, card: 'bg-purple-50/85 border-purple-100', color: 'text-purple-700' },
+      { id: 'quality', tab: 'quality', label: ['Ubora', 'Quality'], icon: BadgeCheck, card: 'bg-emerald-50/85 border-emerald-100', color: 'text-emerald-700' },
+      { id: 'transport', tab: 'transport', label: ['Usafiri', 'Transport'], icon: Truck, card: 'bg-teal-50/75 border-teal-100', color: 'text-emerald-700' },
+      { id: 'payments', tab: 'payments', label: ['Malipo', 'Payments'], icon: Wallet, card: 'bg-amber-50/85 border-amber-100', color: 'text-amber-700' }
+    ]
+  },
+  {
+    id: 'ops',
+    title: ['UENDESHAJI & GHARAMA', 'OPERATIONS & COSTS'],
+    items: [
+      { id: 'fuel', tab: 'fuel', subTab: 'issue', label: ['Mafuta', 'Fuel'], icon: FuelIcon, card: 'bg-amber-50/85 border-amber-100', color: 'text-amber-600' },
+      { id: 'boats', tab: 'maintenance', subTab: 'orders', label: ['Boti', 'Boats'], icon: Wrench, card: 'bg-orange-50/85 border-orange-100', color: 'text-orange-700' },
+      { id: 'spares', tab: 'maintenance', subTab: 'spares', label: ['Zana', 'Spares'], icon: Anchor, card: 'bg-cyan-50/85 border-cyan-100', color: 'text-cyan-700' },
+      { id: 'accounts', tab: 'fuel', subTab: 'accounts', label: ['Akaunti', 'Accounts'], icon: Droplets, card: 'bg-emerald-50/85 border-emerald-100', color: 'text-emerald-700' },
+      { id: 'advances', tab: 'crew', subTab: 'financials', label: ['Mikopo', 'Advances'], icon: CreditCard, card: 'bg-rose-50/85 border-rose-100', color: 'text-rose-600' },
+      { id: 'settlements', tab: 'fuel', subTab: 'settlements', label: ['Makato', 'Settlements'], icon: FileSpreadsheet, card: 'bg-sky-50/85 border-sky-100', color: 'text-[#0b3a8c]' }
+    ]
+  },
+  {
+    id: 'leadership',
+    title: ['UONGOZI & TAKWIMU', 'LEADERSHIP & ANALYTICS'],
+    items: [
+      { id: 'hq', tab: 'hq', label: ['Makao', 'HQ'], icon: Building2, card: 'bg-slate-100/85 border-slate-200/80', color: 'text-[#052d56]' },
+      { id: 'bi', tab: 'bi', label: ['BI & Faida', 'BI & P&L'], icon: TrendingUp, card: 'bg-sky-50/85 border-sky-100', color: 'text-blue-700' },
+      { id: 'expenses', tab: 'expenses', label: ['Matumizi', 'Expenses'], icon: Receipt, card: 'bg-purple-50/85 border-purple-100', color: 'text-purple-600' },
+      { id: 'reports', tab: 'reports', label: ['Ripoti', 'Reports'], icon: BarChart3, card: 'bg-emerald-50/85 border-emerald-100', color: 'text-emerald-700' },
+      { id: 'compliance', tab: 'compliance', label: ['Vibali', 'Licences'], icon: FileText, card: 'bg-rose-50/85 border-rose-100', color: 'text-rose-600' },
+      { id: 'audit', tab: 'audit', label: ['Ukaguzi', 'Audit'], icon: ShieldAlert, card: 'bg-slate-100/85 border-slate-200/80', color: 'text-slate-700' },
+      { id: 'staff', tab: 'staff', label: ['Wafanyakazi', 'Staff'], icon: UserCheck, card: 'bg-violet-50/85 border-violet-100', color: 'text-violet-700' },
+      { id: 'home', tab: 'home', label: ['Nyumbani', 'Home'], icon: HomeIcon, card: 'bg-blue-50/85 border-blue-100', color: 'text-[#0b3a8c]' }
+    ]
+  }
 ]
 
 export default function App() {
@@ -149,7 +183,13 @@ export default function App() {
     else setTab('home')
   }
 
-  const changeTab = k => {
+  const changeTab = (k, subTab) => {
+    if (subTab) {
+      try {
+        sessionStorage.setItem('ft_subtab', JSON.stringify({ tab: k, subTab }))
+      } catch {}
+      window.dispatchEvent(new CustomEvent('aquacatch:subtab', { detail: { tab: k, subTab } }))
+    }
     setTab(k)
     location.hash = '#/' + k
   }
@@ -508,14 +548,14 @@ export default function App() {
           <ActiveComponent go={changeTab} />
         </main>
 
-        {/* Mobile Bottom Navigation (< 768px, 5 tabs matching Reference UI) */}
+        {/* Mobile Bottom Navigation (< 768px, Distinct Mobile App Icons) */}
         <nav className="mobile-bottom-nav" aria-label="Mobile Navigation">
           <button
             type="button"
             onClick={() => changeTab('home')}
             className={`mobile-nav-btn ${currentTab === 'home' ? 'active' : ''}`}
           >
-            <LayoutDashboard size={20} />
+            <HomeIcon size={20} strokeWidth={currentTab === 'home' ? 2.4 : 1.9} />
             <span>{t('Nyumbani', 'Home')}</span>
           </button>
           {isAllowed('buy') && (
@@ -524,7 +564,7 @@ export default function App() {
               onClick={() => changeTab('buy')}
               className={`mobile-nav-btn ${currentTab === 'buy' ? 'active' : ''}`}
             >
-              <Scale size={20} />
+              <ShoppingCart size={20} strokeWidth={currentTab === 'buy' ? 2.4 : 1.9} />
               <span>{t('Manunuzi', 'Purchase')}</span>
             </button>
           )}
@@ -534,7 +574,7 @@ export default function App() {
               onClick={() => changeTab('stock')}
               className={`mobile-nav-btn ${currentTab === 'stock' ? 'active' : ''}`}
             >
-              <Warehouse size={20} />
+              <Warehouse size={20} strokeWidth={currentTab === 'stock' ? 2.4 : 1.9} />
               <span>{t('Stoo', 'Inventory')}</span>
             </button>
           )}
@@ -544,7 +584,7 @@ export default function App() {
               onClick={() => changeTab('sales')}
               className={`mobile-nav-btn ${currentTab === 'sales' ? 'active' : ''}`}
             >
-              <ShoppingBag size={20} />
+              <Store size={20} strokeWidth={currentTab === 'sales' ? 2.4 : 1.9} />
               <span>{t('Mauzo', 'Sales')}</span>
             </button>
           )}
@@ -553,187 +593,209 @@ export default function App() {
             onClick={() => setMoreOpen(true)}
             className={`mobile-nav-btn ${moreOpen ? 'active' : ''}`}
           >
-            <Menu size={20} />
-            <span>{t('Zaidi', 'More')}</span>
+            <LayoutGrid size={20} strokeWidth={moreOpen ? 2.4 : 1.9} />
+            <span>{t('Moduli', 'Apps')}</span>
           </button>
         </nav>
 
-        {/* Full-Height Deep Ocean Navy "More" Slide-Over Drawer (Screen 12) */}
+        {/* Mobile App-Icon Launcher Bottom Sheet (Matches Reference Mobile Launcher) */}
         {moreOpen && (
           <div
-            className="fixed inset-0 z-50 bg-slate-950/55 backdrop-blur-[2px] flex justify-end md:hidden"
+            className="fixed inset-0 z-50 bg-slate-950/50 backdrop-blur-[2px] flex items-end md:hidden"
             onClick={() => setMoreOpen(false)}
           >
-            <aside
+            <section
               onClick={e => e.stopPropagation()}
-              className="w-[86%] max-w-[330px] h-full bg-gradient-to-b from-[#042242] via-[#052d56] to-[#073a6e] text-white flex flex-col relative overflow-hidden shadow-2xl"
-              style={{
-                paddingTop: 'env(safe-area-inset-top)',
-                paddingBottom: 'env(safe-area-inset-bottom)'
-              }}
+              className="w-full max-h-[91dvh] bg-white rounded-t-[26px] flex flex-col overflow-hidden shadow-2xl animate-[sheetSlideUp_0.22s_ease-out]"
+              style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
             >
-              {/* Decorative Ocean Wave SVG at Bottom */}
-              <svg
-                viewBox="0 0 320 90"
-                preserveAspectRatio="none"
-                className="pointer-events-none absolute bottom-0 inset-x-0 w-full h-24 opacity-25"
-              >
-                <path
-                  d="M0,45 C75,85 160,10 245,45 C280,60 305,40 320,30 L320,90 L0,90 Z"
-                  fill="#18b8b2"
-                />
-                <path
-                  d="M0,62 C90,25 190,85 320,50 L320,90 L0,90 Z"
-                  fill="#38bdf8"
-                />
-              </svg>
+              {/* Drag Handle */}
+              <div className="w-10 h-1 bg-slate-300 rounded-full mx-auto mt-2.5 mb-2 shrink-0" />
 
-              {/* Drawer Header */}
-              <div className="px-4 pt-4 pb-3 border-b border-white/12 flex items-center justify-between gap-3 relative z-10">
-                <div className="flex items-center gap-3 min-w-0">
-                  <div className="w-11 h-11 rounded-2xl bg-white p-1.5 flex items-center justify-center shrink-0 shadow">
+              {/* Blue Gradient Brand Hero Card */}
+              <div className="mx-4 rounded-2xl bg-gradient-to-r from-[#052d56] via-[#0b3a8c] to-[#135fd4] p-3.5 text-white flex items-center justify-between gap-2 shadow-md shrink-0">
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <div className="w-11 h-11 rounded-xl bg-white p-1 flex items-center justify-center shrink-0 shadow-sm">
                     <img
                       src="/assets/aistudio/AquaCatch_Sharkwave_Logo_df0743e7.png"
                       alt="AquaCatch"
                       className="w-full h-full object-contain"
                     />
                   </div>
-                  <div className="min-w-0">
-                    <b className="text-sm font-bold text-white block truncate">{T?.name || 'FishTrade ERP'}</b>
-                    <span className="text-xs text-sky-200 block truncate">
-                      {me.name} · {s.role}
+                  <div className="min-w-0 leading-tight">
+                    <b className="text-[14.5px] font-extrabold text-white block truncate">
+                      {T?.name || 'FishTrade ERP'}
+                    </b>
+                    <span className="text-xs text-sky-100/90 block truncate mt-0.5">
+                      {me.name}
                     </span>
                   </div>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => setMoreOpen(false)}
-                  aria-label="Close navigation drawer"
-                  className="w-10 h-10 rounded-xl bg-white/10 hover:bg-white/20 text-white flex items-center justify-center shrink-0"
-                >
-                  <X size={20} />
-                </button>
+
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <LangToggle lang={lang} setLang={setLang} />
+                  <span className="px-2.5 py-1.5 rounded-lg bg-white/18 text-white text-[11px] font-bold">
+                    {s.role}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setMoreOpen(false)}
+                    aria-label="Close app launcher"
+                    className="w-8 h-8 rounded-full bg-white/15 hover:bg-white/25 text-white flex items-center justify-center shrink-0"
+                  >
+                    <X size={16} />
+                  </button>
+                </div>
               </div>
 
-              {/* Adaptive Device & Network Telemetry Pill */}
-              <div className="px-4 pt-3 pb-2 relative z-10 space-y-2">
-                <div className="p-2.5 rounded-xl bg-white/8 border border-white/12 flex items-center justify-between gap-2 text-[11px]">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <Smartphone size={14} className="text-sky-300 shrink-0" />
+              {/* Scrollable App Launcher Content */}
+              <div className="flex-1 overflow-y-auto px-4 pt-3 pb-4 space-y-4 no-scrollbar">
+                {/* Single Clean Branch Selector Row */}
+                <div className="relative flex items-center justify-between gap-3 px-2 py-2.5 border-b border-slate-100">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="w-9 h-9 rounded-xl bg-blue-50 text-[#0b3a8c] flex items-center justify-center shrink-0">
+                      <MapPin size={18} />
+                    </div>
                     <div className="min-w-0">
-                      <span className="font-bold text-white block truncate">{device.platformLabel}</span>
-                      <span className="text-sky-200 block truncate">{device.networkLabel}</span>
+                      <b className="text-sm text-slate-900 block leading-tight">
+                        {hq && T.branches.length > 1 ? t('Chagua Tawi', 'Select Branch') : t('Kituo Cha Sasa', 'Active Branch')}
+                      </b>
+                      <span className="text-xs text-slate-500 block truncate mt-0.5">{B?.name}</span>
                     </div>
                   </div>
-                  {pendingSyncCount > 0 ? (
-                    <button
-                      type="button"
-                      onClick={() => syncNow()}
-                      disabled={!isOnline || syncing}
-                      className="px-2.5 py-1 rounded-lg bg-emerald-500 text-white font-bold shrink-0 flex items-center gap-1"
-                    >
-                      <RefreshCw size={11} className={syncing ? 'animate-spin' : ''} />
-                      {pendingSyncCount}
-                    </button>
-                  ) : (
-                    <span className={`px-2 py-0.5 rounded-md font-bold text-[10px] ${isOnline ? 'bg-emerald-500/20 text-emerald-300' : 'bg-amber-500/20 text-amber-300'}`}>
-                      {isOnline ? t('Tayari', 'Ready') : t('Nje', 'Offline')}
-                    </span>
+                  {hq && T.branches.length > 1 && (
+                    <>
+                      <ArrowLeftRight size={17} className="text-slate-500 shrink-0" />
+                      <select
+                        value={B.id}
+                        aria-label={t('Chagua Tawi', 'Select Branch')}
+                        onChange={e => {
+                          x.switchBranch(e.target.value)
+                          changeTab('home')
+                          setMoreOpen(false)
+                        }}
+                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                      >
+                        {T.branches.map(b => (
+                          <option key={b.id} value={b.id}>
+                            {b.name}
+                          </option>
+                        ))}
+                      </select>
+                    </>
                   )}
                 </div>
 
-                {/* Branch Switcher on Mobile if HQ */}
-                {hq && T.branches.length > 1 && (
-                  <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-white/10 border border-white/15 text-xs">
-                    <MapPin size={14} className="text-sky-300 shrink-0" />
-                    <select
-                      value={B.id}
-                      onChange={e => {
-                        x.switchBranch(e.target.value)
-                        changeTab('home')
-                        setMoreOpen(false)
-                      }}
-                      className="bg-transparent text-white font-semibold w-full outline-none"
-                    >
-                      {T.branches.map(b => (
-                        <option key={b.id} value={b.id} className="text-slate-900">
-                          {b.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                )}
-              </div>
-
-              {/* Scrollable Module List */}
-              <div className="flex-1 overflow-y-auto px-3 py-1 space-y-1 relative z-10 no-scrollbar">
-                {DRAWER_ORDER.filter(isAllowed).map(k => {
-                  const item = MODULE_DEFS[k]
-                  if (!item) return null
-                  const Icon = item.icon
-                  const active = currentTab === k
-                  const badgeCount = badges[k] || 0
+                {/* Grouped 4-Column Colored App-Icon Grids */}
+                {MOBILE_LAUNCHER_GROUPS.map(grp => {
+                  const visibleItems = grp.items.filter(item => isAllowed(item.tab))
+                  if (visibleItems.length === 0) return null
                   return (
-                    <button
-                      key={k}
-                      type="button"
-                      onClick={() => {
-                        changeTab(k)
-                        setMoreOpen(false)
-                      }}
-                      className={`w-full min-h-[44px] px-3.5 py-2 rounded-xl flex items-center justify-between text-left transition ${
-                        active
-                          ? 'bg-white/18 text-white font-bold shadow-sm'
-                          : 'text-sky-100/90 hover:bg-white/10 font-medium'
-                      }`}
-                    >
-                      <span className="flex items-center gap-3 min-w-0">
-                        <Icon size={18} className={active ? 'text-[#18b8b2] shrink-0' : 'text-sky-300 shrink-0'} />
-                        <span className="text-[13.5px] truncate">{t(item.label[0], item.label[1])}</span>
-                      </span>
-                      {badgeCount > 0 && (
-                        <span className="px-2 py-0.5 rounded-full bg-rose-500 text-white text-[10px] font-bold">
-                          {badgeCount}
-                        </span>
-                      )}
-                    </button>
+                    <div key={grp.id}>
+                      <h4 className="text-[11px] font-bold uppercase tracking-[0.08em] text-slate-400 m-0 mb-2 px-0.5">
+                        {t(grp.title[0], grp.title[1])}
+                      </h4>
+                      <div className="grid grid-cols-4 gap-2.5">
+                        {visibleItems.map(item => {
+                          const Icon = item.icon
+                          const active = currentTab === item.tab && !item.subTab
+                          const badgeCount = !item.subTab ? badges[item.tab] || 0 : 0
+                          return (
+                            <button
+                              key={item.id}
+                              type="button"
+                              onClick={() => {
+                                changeTab(item.tab, item.subTab)
+                                setMoreOpen(false)
+                              }}
+                              className={`relative flex flex-col items-center justify-center gap-1.5 py-3 px-1 rounded-2xl border transition active:scale-95 ${item.card} ${
+                                active ? 'ring-2 ring-[#052d56] shadow-sm' : ''
+                              }`}
+                            >
+                              <Icon size={22} className={`${item.color} shrink-0`} strokeWidth={2.1} />
+                              <span className={`text-[11px] font-semibold leading-tight text-center truncate w-full px-0.5 ${item.color}`}>
+                                {t(item.label[0], item.label[1])}
+                              </span>
+                              {badgeCount > 0 && (
+                                <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-rose-500 text-white text-[10px] font-bold flex items-center justify-center shadow">
+                                  {badgeCount}
+                                </span>
+                              )}
+                            </button>
+                          )
+                        })}
+                      </div>
+                    </div>
                   )
                 })}
-              </div>
 
-              {/* Drawer Footer Controls */}
-              <div className="p-4 border-t border-white/12 space-y-2.5 relative z-10 bg-[#042242]/80 backdrop-blur-sm">
-                <div className="flex items-center justify-between gap-2">
-                  <button
-                    type="button"
-                    onClick={() => device.setLowBandwidthMode(lowBandwidthMode ? false : true)}
-                    className="flex-1 min-h-[40px] px-3 py-2 rounded-xl bg-white/10 hover:bg-white/15 text-xs font-semibold text-sky-100 flex items-center justify-between border border-white/10"
-                  >
-                    <span className="flex items-center gap-1.5">
-                      <Gauge size={14} className="text-sky-300" />
-                      {t('Data Kidogo', 'Low Data')}
-                    </span>
-                    <span className={`text-[10px] font-bold ${lowBandwidthMode ? 'text-emerald-300' : 'text-slate-400'}`}>
-                      {lowBandwidthMode ? 'ON' : 'OFF'}
-                    </span>
-                  </button>
-                  <div className="shrink-0">
-                    <LangToggle lang={lang} setLang={setLang} />
+                {/* Adaptive Connectivity, Low Data & PWA Install Row */}
+                <div className="pt-2 border-t border-slate-100 space-y-2">
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setMoreOpen(false)
+                        setSyncOpen(true)
+                      }}
+                      className="flex items-center gap-2 p-2.5 rounded-2xl bg-slate-50 border border-slate-200 text-left"
+                    >
+                      <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${
+                        !isOnline ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700'
+                      }`}>
+                        {isOnline ? <Smartphone size={16} /> : <WifiOff size={16} />}
+                      </div>
+                      <div className="min-w-0">
+                        <b className="text-[11px] text-slate-900 block truncate">{device.platformLabel}</b>
+                        <span className="text-[10px] text-slate-500 block truncate">
+                          {pendingSyncCount > 0
+                            ? `${pendingSyncCount} ${t('foleni', 'queued')}`
+                            : device.networkLabel}
+                        </span>
+                      </div>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => device.setLowBandwidthMode(!lowBandwidthMode)}
+                      className={`flex items-center justify-between gap-2 p-2.5 rounded-2xl border text-left ${
+                        lowBandwidthMode
+                          ? 'bg-sky-50 border-sky-200'
+                          : 'bg-slate-50 border-slate-200'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2 min-w-0">
+                        <div className="w-8 h-8 rounded-xl bg-white border border-slate-200 text-[#0b3a8c] flex items-center justify-center shrink-0">
+                          <Gauge size={16} />
+                        </div>
+                        <span className="text-[11px] font-bold text-slate-800 truncate">
+                          {t('Data Kidogo', 'Low Data')}
+                        </span>
+                      </div>
+                      <span className={`text-[10px] font-extrabold px-1.5 py-0.5 rounded ${
+                        lowBandwidthMode ? 'bg-emerald-600 text-white' : 'bg-slate-200 text-slate-600'
+                      }`}>
+                        {lowBandwidthMode ? 'ON' : 'OFF'}
+                      </span>
+                    </button>
                   </div>
+
+                  <PWAInstallButton />
                 </div>
 
-                <PWAInstallButton variant="drawer" />
-
+                {/* Sign Out Row */}
                 <button
                   type="button"
                   onClick={out}
-                  className="w-full min-h-[44px] px-3.5 py-2.5 rounded-xl text-rose-400 hover:bg-rose-500/15 font-bold text-sm flex items-center gap-3 transition"
+                  className="w-full flex items-center gap-3 px-1 py-2.5 border-t border-slate-100 text-rose-600 hover:bg-rose-50/60 rounded-xl font-bold text-sm transition"
                 >
-                  <LogOut size={18} />
-                  <span>{t('Toka Kwenye Mfumo', 'Logout')}</span>
+                  <div className="w-9 h-9 rounded-xl bg-rose-50 border border-rose-100 text-rose-600 flex items-center justify-center shrink-0">
+                    <LogOut size={17} />
+                  </div>
+                  <span>{t('Toka Kwenye Mfumo', 'Sign Out')}</span>
                 </button>
               </div>
-            </aside>
+            </section>
           </div>
         )}
 
